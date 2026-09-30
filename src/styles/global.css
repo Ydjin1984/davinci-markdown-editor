@@ -923,30 +923,54 @@ button:focus-visible {
 
 /* --- about / shortcuts --------------------------------------------------- */
 
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .about-hero {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
 }
-.about-mark {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 22px;
+.about-logo {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  /* The emblem is drawn for a dark background and bleeds to the edge. */
+  background: #0b0b0c;
+}
+.about-identity {
+  min-width: 0;
 }
 .about-hero h2 {
   margin: 0 0 2px;
-  font-size: 16px;
+  font-size: 17px;
 }
 .about-hero p {
   margin: 0;
+  color: var(--fg-muted);
+}
+.about-version {
+  font-size: 12px;
+}
+.about-publisher {
+  margin-top: 4px !important;
+  color: var(--fg-default) !important;
+  font-weight: 600;
+}
+.about-tagline {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.about-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--fg-muted);
 }
 
@@ -963,6 +987,72 @@ button:focus-visible {
 .about-grid dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.link-button {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.about-donate {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.about-qr {
+  flex: 0 0 auto;
+  width: 168px;
+  height: 167px;
+  /* Rendered small and scaled up with nearest-neighbour, so the modules stay
+     crisp instead of going soft at display size. */
+  image-rendering: pixelated;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  background: #ffffff;
+  padding: 6px;
+}
+.about-donate-details {
+  min-width: 0;
+  flex: 1;
+}
+.about-address-label {
+  margin: 12px 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+.about-address {
+  display: block;
+  padding: 7px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.about-donate-actions {
+  margin-top: 10px;
+}
+.about-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.about-path {
+  font-size: 11px;
 }
 
 .shortcut-table {

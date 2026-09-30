@@ -5,6 +5,7 @@ pub mod cli;
 pub mod commands;
 pub mod error;
 pub mod filesystem;
+pub mod links;
 pub mod paths;
 pub mod settings;
 pub mod state;

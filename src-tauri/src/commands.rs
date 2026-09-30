@@ -370,27 +370,17 @@ pub fn reveal_in_file_manager(app: AppHandle, path: String) -> Result<()> {
 // Shell integration
 // ---------------------------------------------------------------------------
 
-/// Schemes the preview is allowed to hand to the operating system.
-const ALLOWED_URL_SCHEMES: &[&str] = &["http", "https", "mailto"];
-
+/// Hand a link to the operating system's default handler.
+///
+/// The URL is vetted first. It arrives from document content, which is
+/// untrusted input, and it ends up as a request the user's browser makes on
+/// their behalf. See [`crate::links`] for what is allowed and why.
 #[tauri::command]
 pub fn open_external_url(app: AppHandle, url: String) -> Result<()> {
-    let trimmed = url.trim();
-    let scheme = trimmed
-        .split_once(':')
-        .map(|(scheme, _)| scheme.to_ascii_lowercase())
-        .unwrap_or_default();
-
-    if !ALLOWED_URL_SCHEMES.contains(&scheme.as_str()) {
-        return Err(AppError::new(
-            ErrorCode::Unsupported,
-            "That kind of link is not opened automatically.",
-        )
-        .with_detail(format!("scheme '{scheme}'")));
-    }
+    let checked = crate::links::check(&url)?;
 
     app.opener()
-        .open_url(trimmed.to_string(), None::<String>)
+        .open_url(checked.to_string(), None::<String>)
         .map_err(|err| {
             AppError::internal("The link could not be opened.").with_detail(err.to_string())
         })

@@ -1,3 +1,5 @@
+<img src="src/assets/logo.png" alt="DaVinci Cyber Engineering" width="112" align="right" />
+
 # DaVinci Markdown Editor
 
 A cross-platform, natively integrated Markdown editor for **Windows** and **Linux** with
@@ -7,6 +9,21 @@ Open a `.md` file in Explorer or your file manager and it appears in a tab — t
 other document does. No account, no cloud, no telemetry.
 
 ![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB) ![React 19](https://img.shields.io/badge/React-19-61DAFB) ![Rust](https://img.shields.io/badge/Rust-stable-000000)
+
+---
+
+## Publisher
+
+**DaVinci Cyber Engineering** — *Secure · Analyze · Engineer · Build*
+
+| | |
+|---|---|
+| Website | <https://www.davinci-cyber-engineering.uz/> |
+| Email | <info@davinci-cyber-engineering.uz> |
+| Support the project | USDT · TRC20 · `TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41` |
+
+Donations are voluntary and buy no support, features or licences. The same details, with a
+scannable QR code, are in the application under *Help → About*.
 
 ---
 

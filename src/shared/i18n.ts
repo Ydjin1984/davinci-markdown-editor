@@ -299,6 +299,28 @@ const STRINGS = {
   "common.name": { en: "Name", ru: "Имя" },
   "common.rename": { en: "Rename", ru: "Переименовать" },
   "common.create": { en: "Create", ru: "Создать" },
+
+  "about.publisher": { en: "DaVinci Cyber Engineering", ru: "DaVinci Cyber Engineering" },
+  "about.tagline": { en: "Secure · Analyze · Engineer · Build", ru: "Secure · Analyze · Engineer · Build" },
+  "about.contact": { en: "Contact", ru: "Связаться" },
+  "about.website": { en: "Website", ru: "Сайт" },
+  "about.email": { en: "Email", ru: "Почта" },
+  "about.donate": { en: "Support the project", ru: "Поддержать проект" },
+  "about.donateNote": {
+    en: "Donations are voluntary and do not buy support, features or licences.",
+    ru: "Донат добровольный и не даёт прав на поддержку, функции или лицензию.",
+  },
+  "about.network": { en: "Network", ru: "Сеть" },
+  "about.address": { en: "Address", ru: "Адрес" },
+  "about.scanHint": {
+    en: "Scan with a TRON wallet to send USDT (TRC20).",
+    ru: "Отсканируйте в TRON-кошельке, чтобы отправить USDT (TRC20).",
+  },
+  "about.copyAddress": { en: "Copy address", ru: "Копировать адрес" },
+  "about.openWebsite": { en: "Open website", ru: "Открыть сайт" },
+  "about.sendEmail": { en: "Send email", ru: "Написать письмо" },
+  "about.qrAlt": { en: "TRC20 donation address QR code", ru: "QR-код адреса для доната TRC20" },
+  "about.license": { en: "Licensed under the MIT licence.", ru: "Лицензия MIT." },
 } as const satisfies Record<string, Entry>;
 
 export type StringKey = keyof typeof STRINGS;

@@ -528,7 +528,9 @@ export function App() {
           }}
         >
           <div
-            className={cx("modal", dialog === "settings" && "modal--wide")}
+            // About carries the publisher details and a donation QR, so it needs
+            // the same room as the settings pane.
+            className={cx("modal", (dialog === "settings" || dialog === "about") && "modal--wide")}
             role="dialog"
             aria-modal="true"
           >
