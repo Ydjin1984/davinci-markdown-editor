@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Least-privilege capability for the single application window. Every filesystem, dialog, watcher and shell action goes through an explicitly reviewed Rust command instead of a broad plugin permission, so the webview cannot reach the disk or the OS on its own.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-title",
+    "core:window:allow-start-dragging",
+    "core:window:allow-destroy"
+  ]
+}

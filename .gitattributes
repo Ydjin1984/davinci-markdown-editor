@@ -1,0 +1,27 @@
+# Normalise line endings so Windows and Linux checkouts produce identical files.
+#
+# The repository stores LF everywhere; without this, Git on Windows would rewrite
+# every text file to CRLF on checkout, which makes the working tree differ from
+# what CI and Linux contributors see.
+* text=auto eol=lf
+
+# Batch files are the exception: cmd.exe requires CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Lock files are generated; hiding them from diffs keeps reviews readable.
+package-lock.json -diff
+src-tauri/Cargo.lock -diff

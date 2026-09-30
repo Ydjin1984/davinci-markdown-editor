@@ -1,0 +1,472 @@
+/*
+ * GitHub-flavoured rendering styles for the preview.
+ *
+ * This file is also embedded verbatim into exported HTML documents, so it must
+ * stay self-contained: the theme variables are declared here, scoped to the
+ * `markdown-body--light` / `markdown-body--dark` modifiers, and nothing depends
+ * on styles defined elsewhere in the application.
+ */
+
+.markdown-body--light {
+  --md-fg: #1f2328;
+  --md-fg-muted: #59636e;
+  --md-bg: #ffffff;
+  --md-border: #d1d9e0;
+  --md-border-muted: #d1d9e0b3;
+  --md-accent: #0969da;
+  --md-code-bg: #f6f8fa;
+  --md-code-fg: #1f2328;
+  --md-quote-bar: #d1d9e0;
+  --md-table-stripe: #f6f8fa;
+  --md-mark: #fff8c5;
+  --md-danger: #d1242f;
+  --md-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+}
+
+.markdown-body--dark {
+  --md-fg: #e6edf3;
+  --md-fg-muted: #9198a1;
+  --md-bg: #0d1117;
+  --md-border: #3d444d;
+  --md-border-muted: #3d444db3;
+  --md-accent: #4493f8;
+  --md-code-bg: #151b23;
+  --md-code-fg: #e6edf3;
+  --md-quote-bar: #3d444d;
+  --md-table-stripe: #151b23;
+  --md-mark: #6e5a00;
+  --md-danger: #f85149;
+  --md-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.markdown-body {
+  color: var(--md-fg);
+  background: var(--md-bg);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji", sans-serif;
+  line-height: 1.6;
+  word-wrap: break-word;
+  padding: 24px 28px 56px;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+/* --- text ---------------------------------------------------------------- */
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 24px 0 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  scroll-margin-top: 12px;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border-muted);
+}
+.markdown-body h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-border-muted);
+}
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+.markdown-body h4 {
+  font-size: 1em;
+}
+.markdown-body h5 {
+  font-size: 0.875em;
+}
+.markdown-body h6 {
+  font-size: 0.85em;
+  color: var(--md-fg-muted);
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body details,
+.markdown-body figure {
+  margin: 0 0 16px;
+}
+
+.markdown-body a {
+  color: var(--md-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+}
+.markdown-body mark {
+  background: var(--md-mark);
+  color: inherit;
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+}
+.markdown-body del {
+  color: var(--md-fg-muted);
+}
+.markdown-body hr {
+  height: 1px;
+  margin: 24px 0;
+  border: 0;
+  background: var(--md-border);
+}
+
+.markdown-body .md-anchor {
+  margin-left: 6px;
+  color: var(--md-fg-muted);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  text-decoration: none;
+}
+.markdown-body h1:hover .md-anchor,
+.markdown-body h2:hover .md-anchor,
+.markdown-body h3:hover .md-anchor,
+.markdown-body h4:hover .md-anchor,
+.markdown-body h5:hover .md-anchor,
+.markdown-body h6:hover .md-anchor {
+  opacity: 1;
+}
+
+/* --- lists --------------------------------------------------------------- */
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.markdown-body li + li {
+  margin-top: 0.25em;
+}
+.markdown-body li > p {
+  margin-bottom: 8px;
+}
+
+.markdown-body li.task-list-item,
+.markdown-body li:has(> input[type="checkbox"]) {
+  list-style-type: none;
+  margin-left: -1.4em;
+}
+.markdown-body input[type="checkbox"] {
+  margin: 0 0.4em 0.2em -1.2em;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+.markdown-body dl dt {
+  font-weight: 600;
+  margin-top: 16px;
+}
+.markdown-body dl dd {
+  margin: 0 0 12px 1.5em;
+  color: var(--md-fg-muted);
+}
+
+/* --- quotes -------------------------------------------------------------- */
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: var(--md-fg-muted);
+  border-left: 0.25em solid var(--md-quote-bar);
+}
+.markdown-body blockquote > :first-child {
+  margin-top: 0;
+}
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- tables -------------------------------------------------------------- */
+
+.markdown-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid var(--md-border);
+}
+.markdown-body table th {
+  font-weight: 600;
+  background: var(--md-table-stripe);
+}
+.markdown-body table tr:nth-child(2n) {
+  background: var(--md-table-stripe);
+}
+
+/* --- code ---------------------------------------------------------------- */
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body samp {
+  font-family:
+    "Cascadia Code", "JetBrains Mono", "Fira Code", ui-monospace, "DejaVu Sans Mono", Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.markdown-body :not(pre) > code {
+  padding: 0.2em 0.4em;
+  background: var(--md-code-bg);
+  border-radius: 6px;
+  color: var(--md-code-fg);
+  white-space: break-spaces;
+}
+
+.markdown-body kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 0.75em;
+  line-height: 1;
+  color: var(--md-fg);
+  background: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+}
+
+.markdown-body pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  font-size: 0.88em;
+  line-height: 1.5;
+  background: var(--md-code-bg);
+  border-radius: 6px;
+  tab-size: 4;
+}
+
+.markdown-body pre code {
+  display: block;
+  background: transparent;
+  padding: 0;
+  white-space: pre;
+  word-break: normal;
+}
+
+.markdown-body .md-code-wrap pre code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.markdown-body .md-code {
+  position: relative;
+  margin: 0 0 16px;
+  border: 1px solid var(--md-border-muted);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--md-code-bg);
+}
+
+.markdown-body .md-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 12px;
+  font-size: 12px;
+  color: var(--md-fg-muted);
+  background: var(--md-code-bg);
+  border-bottom: 1px solid var(--md-border-muted);
+}
+
+.markdown-body .md-code-lang {
+  text-transform: lowercase;
+  font-family: ui-monospace, monospace;
+}
+
+.markdown-body .md-code-copy,
+.markdown-body .md-diagram-action {
+  font: inherit;
+  font-size: 12px;
+  color: var(--md-fg-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.markdown-body .md-code-copy:hover,
+.markdown-body .md-diagram-action:hover {
+  color: var(--md-fg);
+  border-color: var(--md-border);
+  background: var(--md-bg);
+}
+
+/* Shiki paints the background on the <pre>; keep our container in charge. */
+.markdown-body .shiki {
+  background: var(--md-code-bg) !important;
+  border-radius: 0;
+}
+
+/* --- diagrams ------------------------------------------------------------ */
+
+.markdown-body .md-diagram {
+  margin: 0 0 16px;
+  border: 1px solid var(--md-border-muted);
+  border-radius: 6px;
+  background: var(--md-bg);
+  overflow: hidden;
+}
+
+.markdown-body .md-diagram-tools {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--md-border-muted);
+}
+
+.markdown-body .md-diagram-stage {
+  padding: 12px;
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.markdown-body .md-diagram-viewport {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.markdown-body .md-diagram-viewport svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.markdown-body .md-diagram-canvas {
+  margin: 0 auto;
+}
+
+.markdown-body .md-diagram[data-diagram-state="pending"] .md-diagram-stage {
+  min-height: 60px;
+}
+
+.markdown-body .md-diagram-source {
+  margin: 0;
+  background: var(--md-code-bg);
+}
+
+.markdown-body .md-diagram[data-diagram-state="ready"] .md-diagram-source {
+  display: none;
+}
+
+.markdown-body .md-diagram-error {
+  border-left: 3px solid var(--md-danger);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--md-danger) 8%, transparent);
+  border-radius: 4px;
+}
+
+.markdown-body .md-diagram-error-title {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--md-danger);
+}
+
+.markdown-body .md-diagram-error-body {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  background: transparent;
+  padding: 0;
+  color: var(--md-fg);
+}
+
+/* --- media --------------------------------------------------------------- */
+
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background: transparent;
+}
+.markdown-body video,
+.markdown-body audio {
+  max-width: 100%;
+}
+
+/* --- details ------------------------------------------------------------- */
+
+.markdown-body details {
+  border: 1px solid var(--md-border-muted);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.markdown-body summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* --- footnotes ----------------------------------------------------------- */
+
+.markdown-body .footnotes {
+  font-size: 0.9em;
+  color: var(--md-fg-muted);
+  border-top: 1px solid var(--md-border-muted);
+  padding-top: 12px;
+  margin-top: 32px;
+}
+.markdown-body .footnotes h2 {
+  border: 0;
+  font-size: 1em;
+  padding: 0;
+}
+.markdown-body .data-footnote-backref {
+  text-decoration: none;
+}
+
+/* --- math ---------------------------------------------------------------- */
+
+.markdown-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.markdown-body .katex-error {
+  color: var(--md-danger);
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+/* --- misc ---------------------------------------------------------------- */
+
+.markdown-body .md-render-error {
+  border-left: 3px solid var(--md-danger);
+  padding: 8px 12px;
+  color: var(--md-danger);
+}
+
+.markdown-body abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}

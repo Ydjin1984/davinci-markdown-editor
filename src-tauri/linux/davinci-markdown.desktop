@@ -1,0 +1,25 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DaVinci Markdown Editor
+GenericName=Markdown Editor
+Comment=Edit and preview Markdown with Mermaid diagrams and live preview
+Comment[ru]=Редактор Markdown с диаграммами Mermaid и предпросмотром в реальном времени
+Exec=davinci-markdown %F
+TryExec=davinci-markdown
+Icon=io.davinci.markdown
+Terminal=false
+Categories=Utility;TextEditor;Development;
+Keywords=markdown;md;text;editor;preview;mermaid;
+StartupNotify=true
+StartupWMClass=io.davinci.markdown
+MimeType=text/markdown;
+Actions=new-window;new-file;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=davinci-markdown --new-window
+
+[Desktop Action new-file]
+Name=New File
+Exec=davinci-markdown --new-window

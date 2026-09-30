@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared MIME-info registration.
+
+  `text/markdown` is already defined by the shared-mime-info database on modern
+  distributions, so this file only adds the globs that associate the Markdown
+  extensions with it. It is installed into
+  /usr/share/mime/packages/ and picked up by `update-mime-database`.
+
+  Packaging note: the Tauri Debian/RPM bundler writes an equivalent
+  registration from `bundle.fileAssociations` in tauri.conf.json. This file is
+  the explicit, reviewable copy used when packing by hand or when a distribution
+  needs the association to be declared as a package file.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="text/markdown">
+    <comment>Markdown document</comment>
+    <comment xml:lang="ru">Документ Markdown</comment>
+    <glob pattern="*.md"/>
+    <glob pattern="*.markdown"/>
+    <glob pattern="*.mdown"/>
+    <glob pattern="*.mkdn"/>
+    <glob pattern="*.mkd"/>
+    <glob pattern="*.mdx"/>
+    <glob pattern="*.mdtxt"/>
+    <glob pattern="*.mdtext"/>
+  </mime-type>
+</mime-info>

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DaVinci Markdown Editor",
+  "version": "0.1.0",
+  "identifier": "io.davinci.markdown",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "DaVinci Markdown Editor",
+        "width": 1360,
+        "height": 880,
+        "minWidth": 680,
+        "minHeight": 420,
+        "resizable": true,
+        "center": true,
+        "visible": false,
+        "focus": true,
+        "decorations": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'self' blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: mdasset: http://mdasset.localhost; font-src 'self' data:; media-src 'self' mdasset: http://mdasset.localhost; connect-src 'self' ipc: http://ipc.localhost",
+      "dangerousDisableAssetCspModification": ["style-src"],
+      "capabilities": ["default"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "DeveloperTool",
+    "shortDescription": "Markdown editor with GFM, Mermaid and live preview",
+    "longDescription": "DaVinci Markdown Editor is a fast, natively integrated Markdown editor for Windows and Linux. It renders GitHub Flavored Markdown, Mermaid diagrams, syntax-highlighted code blocks and KaTeX math with a live preview, and registers itself as a handler for .md and .markdown files.",
+    "copyright": "DaVinci Markdown Editor contributors",
+    "licenseFile": "../LICENSE",
+    "resources": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "mdown", "mkdn", "mkd"],
+        "name": "Markdown Document",
+        "description": "Markdown document",
+        "role": "Editor",
+        "mimeType": "text/markdown"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "compression": "lzma",
+        "displayLanguageSelector": false,
+        "languages": ["English", "Russian"]
+      },
+      "wix": {
+        "language": ["en-US"]
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"],
+        "files": {
+          "/usr/share/mime/packages/io.davinci.markdown.xml": "linux/io.davinci.markdown.mime.xml"
+        }
+      },
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "gtk3"],
+        "files": {
+          "/usr/share/mime/packages/io.davinci.markdown.xml": "linux/io.davinci.markdown.mime.xml"
+        }
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
+  },
+  "plugins": {}
+}
