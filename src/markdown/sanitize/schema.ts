@@ -49,6 +49,11 @@ export const sanitizeSchema: SanitizeSchema = {
   attributes: {
     ...baseAttributes,
 
+    // Written by the pipeline before sanitisation and read back after it.
+    // Informational only: these never become a `src` on their own, they exist
+    // so a refused asset can still be named in the failure message.
+    "*": [...(baseAttributes["*"] ?? []), "dataSource", "dataResolved"],
+
     // `language-*` drives syntax highlighting; `math-inline`/`math-display`
     // mark KaTeX sources. Both come from remark plugins, not from the author.
     code: [

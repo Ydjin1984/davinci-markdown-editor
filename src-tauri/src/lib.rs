@@ -207,6 +207,7 @@ pub fn run() {
             commands::prompt_unsaved,
             commands::app_info,
             commands::asset_access,
+            commands::probe_asset,
             commands::markdown_extensions,
         ])
         .run(tauri::generate_context!())

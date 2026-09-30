@@ -225,6 +225,18 @@ export const appInfo = () => call<AppInfo>("app_info");
 
 export const assetAccess = () => call<{ scheme: string; roots: string[] }>("asset_access");
 
+export interface AssetProbe {
+  path: string;
+  exists: boolean;
+  /** Whether the preview is allowed to read this path at all. */
+  allowed: boolean;
+  /** Whether the extension is one the preview will inline. */
+  inlineable: boolean;
+}
+
+/** Explain why an image in the preview failed to load. */
+export const probeAsset = (path: string) => call<AssetProbe>("probe_asset", { path });
+
 export const markdownExtensions = () => call<string[]>("markdown_extensions");
 
 // ---------------------------------------------------------------------------

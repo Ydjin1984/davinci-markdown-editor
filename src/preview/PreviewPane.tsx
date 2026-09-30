@@ -66,6 +66,48 @@ export function PreviewPane() {
     return () => setPreviewContainer(null);
   }, []);
 
+  /**
+   * Replace a broken image with an explanation.
+   *
+   * A bare broken-image icon gives the user nothing to act on. The asset
+   * protocol already knows why it refused a request, so we ask it and say which
+   * of the three realistic causes applies.
+   *
+   * `error` does not bubble, hence the capture-phase listener on the container.
+   */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleError = (event: Event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement)) return;
+      if (image.dataset.failed === "1") return; // Guard against a retry loop.
+      if (!image.closest(".markdown-body")) return; // Only inside the preview.
+
+      image.dataset.failed = "1";
+      const reference = image.dataset.source || image.getAttribute("alt") || image.src;
+      const placeholder = buildImagePlaceholder(reference);
+      image.replaceWith(placeholder);
+
+      const resolved = image.dataset.resolved;
+      if (!resolved) {
+        // No local path was derived, so the target was refused outright rather
+        // than looked up on disk.
+        markUnsupportedTarget(placeholder);
+        return;
+      }
+
+      void ipc
+        .probeAsset(resolved)
+        .then((probe) => describeImageFailure(placeholder, reference, probe))
+        .catch(() => undefined);
+    };
+
+    container.addEventListener("error", handleError, true);
+    return () => container.removeEventListener("error", handleError, true);
+  }, []);
+
   // Inject the rendered HTML and bring the diagrams to life.
   useEffect(() => {
     const container = containerRef.current;
@@ -296,4 +338,65 @@ export function PreviewPane() {
       {showNothingToPreview && !warning && <p className="pane-placeholder">{t("preview.empty")}</p>}
     </div>
   );
+}
+
+/**
+ * Build the block that stands in for an image that failed to load.
+ *
+ * Inserted into the preview DOM directly; the preview's children are managed by
+ * `innerHTML`, never by React, so this cannot conflict with reconciliation.
+ */
+function buildImagePlaceholder(reference: string): HTMLElement {
+  const wrapper = document.createElement("span");
+  wrapper.className = "md-image-error";
+
+  const heading = document.createElement("strong");
+  heading.className = "md-image-error-title";
+  heading.textContent = t("image.failedTitle");
+
+  const path = document.createElement("span");
+  path.className = "md-image-error-path";
+  path.textContent = reference;
+
+  const hint = document.createElement("span");
+  hint.className = "md-image-error-hint";
+  hint.textContent = t("image.failedBody");
+
+  wrapper.append(heading, path, hint);
+  return wrapper;
+}
+
+/** Refine the placeholder once the backend has explained the failure. */
+/** Rewrite a placeholder when the target never became a file request. */
+function markUnsupportedTarget(placeholder: HTMLElement): void {
+  if (!placeholder.isConnected) return;
+
+  const title = placeholder.querySelector(".md-image-error-title");
+  const hint = placeholder.querySelector(".md-image-error-hint");
+  if (!title || !hint) return;
+
+  title.textContent = t("image.unsupportedTitle");
+  hint.textContent = t("image.unsupportedBody");
+}
+
+/** Refine the placeholder once the backend has explained the failure. */
+function describeImageFailure(placeholder: HTMLElement, reference: string, probe: ipc.AssetProbe): void {
+  if (!placeholder.isConnected) return;
+
+  const title = placeholder.querySelector(".md-image-error-title");
+  const hint = placeholder.querySelector(".md-image-error-hint");
+  if (!title || !hint) return;
+
+  if (!probe.exists) {
+    title.textContent = t("image.missingTitle");
+    hint.textContent = t("image.missingBody");
+  } else if (!probe.allowed) {
+    title.textContent = t("image.blockedTitle");
+    hint.textContent = t("image.blockedBody");
+  } else if (!probe.inlineable) {
+    title.textContent = t("image.unsupportedTitle");
+    hint.textContent = t("image.unsupportedBody");
+  }
+
+  placeholder.setAttribute("title", `${reference}\n${probe.path}`);
 }

@@ -140,15 +140,18 @@ impl AppState {
         self.store.save_session(session)
     }
 
-    /// Allow the preview to read images next to any open document.
+    /// Recompute what the preview may read.
+    ///
+    /// Rebuilt from scratch on every change: a document that has been closed
+    /// must also give up the ancestor directories it had brought into scope,
+    /// otherwise the preview would keep a wider reach than the open tabs need.
     pub fn refresh_asset_roots(&self) {
-        let documents = self.open_documents();
-        for document in &documents {
-            if let Some(parent) = document.parent() {
-                self.assets.allow_directory(parent);
-            }
-            self.assets.allow_file(document);
+        self.assets.clear();
+
+        for document in self.open_documents() {
+            self.assets.allow_document(&document);
         }
+
         if let Some(root) = self.workspace_root() {
             self.assets.allow_directory(&root);
         }

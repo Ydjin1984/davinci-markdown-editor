@@ -246,6 +246,27 @@ const STRINGS = {
 
   "math.error": { en: "Math error", ru: "Ошибка формулы" },
 
+  "image.failedTitle": { en: "Image could not be displayed", ru: "Не удалось показать изображение" },
+  "image.failedBody": {
+    en: "The file exists but could not be read.",
+    ru: "Файл существует, но не читается.",
+  },
+  "image.missingTitle": { en: "Image not found", ru: "Изображение не найдено" },
+  "image.missingBody": { en: "No file exists at this path.", ru: "По этому пути файла нет." },
+  "image.blockedTitle": {
+    en: "Image is outside the folders the preview may read",
+    ru: "Изображение вне папок, доступных просмотру",
+  },
+  "image.blockedBody": {
+    en: "The preview reads the folder of each open document, its parent folders, and the open workspace.",
+    ru: "Просмотр читает папку каждого открытого документа, её родительские папки и открытую рабочую папку.",
+  },
+  "image.unsupportedTitle": { en: "Unsupported file type", ru: "Неподдерживаемый тип файла" },
+  "image.unsupportedBody": {
+    en: "The preview only inlines images, fonts and media.",
+    ru: "Просмотр показывает только изображения, шрифты и медиа.",
+  },
+
   "toast.saved": { en: "Saved {name}", ru: "Сохранено: {name}" },
   "toast.copied": { en: "Copied to clipboard", ru: "Скопировано в буфер" },
   "toast.copyFailed": { en: "Could not access the clipboard", ru: "Нет доступа к буферу обмена" },

@@ -262,10 +262,10 @@ pub fn open_workspace(app: AppHandle, state: State<'_, AppState>, path: String) 
 
 #[tauri::command]
 pub fn close_workspace(app: AppHandle, state: State<'_, AppState>) -> Result<()> {
-    if let Some(root) = state.workspace_root() {
-        state.assets.revoke_directory(&root);
-    }
     state.set_workspace_root(None);
+    // Rebuild instead of revoking a single entry: the root may have been stored
+    // under a different canonical form, and a full refresh cannot miss it.
+    state.refresh_asset_roots();
     refresh_watchers(&app, &state);
     Ok(())
 }
@@ -597,6 +597,34 @@ pub fn asset_access(state: State<'_, AppState>) -> AssetAccess {
         scheme: ASSET_SCHEME.to_string(),
         roots: state.assets.describe(),
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetProbe {
+    pub path: String,
+    pub exists: bool,
+    /// Whether the preview is allowed to read this path at all.
+    pub allowed: bool,
+    /// Whether the extension is one the preview will inline.
+    pub inlineable: bool,
+}
+
+/// Explain why an image in the preview failed to load.
+///
+/// A broken-image icon tells the user nothing. This distinguishes the three
+/// realistic causes — the file is gone, it sits outside the folders the preview
+/// may read, or it is a type the preview will not inline — so the placeholder
+/// can say which one it is.
+#[tauri::command]
+pub fn probe_asset(state: State<'_, AppState>, path: String) -> Result<AssetProbe> {
+    let resolved = paths::resolve(None, &path)?;
+    Ok(AssetProbe {
+        exists: resolved.exists(),
+        allowed: state.assets.allows(&resolved),
+        inlineable: paths::is_inline_asset(&resolved),
+        path: resolved.to_string_lossy().into_owned(),
+    })
 }
 
 #[tauri::command]

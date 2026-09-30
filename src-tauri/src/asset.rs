@@ -3,17 +3,20 @@
 //! A document is untrusted input, so the preview never receives blanket access
 //! to the filesystem. A file is served only when all three hold:
 //!
-//! * it sits underneath a root the user actually opened (the workspace root or
-//!   the directory of an open document);
+//! * it sits underneath a root the user actually opened — the workspace root,
+//!   or a directory derived from an open document (see [`AssetRoots::allow_document`]);
 //! * it carries an extension the preview is allowed to inline;
 //! * it passes symlink-aware canonicalisation.
 //!
 //! Everything else answers 403 without touching the disk.
+//!
+//! The reach of the preview is always listed by `describe()` and shown to the
+//! user in *Tools → Preview Asset Access*, so it is never hidden from them.
 
 use crate::paths;
 use parking_lot::Mutex;
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use tauri::http::{Request, Response, StatusCode};
 use tauri::{Manager, Runtime, UriSchemeContext, UriSchemeResponder};
@@ -23,12 +26,27 @@ pub const ASSET_SCHEME: &str = "mdasset";
 /// Largest asset the preview will inline.
 const MAX_ASSET_BYTES: u64 = 128 * 1024 * 1024;
 
-/// Directories the preview may read from.
+/// How many ancestor directories of a document are made readable.
+///
+/// Relative links routinely climb out of the document's own folder — a page at
+/// `docs/guide/intro.md` referring to `../../images/logo.png` is the normal
+/// layout of almost every repository — so the folder alone is not enough.
+/// Walking up three levels covers that, while the walk stops before any
+/// filesystem root: registering `/` or `C:\` would hand the preview the whole
+/// disk.
+const DOCUMENT_ANCESTOR_LEVELS: usize = 3;
+
+/// Upper bound on remembered roots and files, so a session that opens hundreds
+/// of documents cannot grow without limit. The oldest entry is evicted first.
+const MAX_ROOTS: usize = 128;
+const MAX_FILES: usize = 512;
+
+/// Directories the preview may read from, oldest first so it can evict.
 #[derive(Default)]
 pub struct AssetRoots {
-    roots: Mutex<HashSet<PathBuf>>,
+    roots: Mutex<VecDeque<PathBuf>>,
     /// Explicitly opened single files (a document opened from anywhere).
-    files: Mutex<HashSet<PathBuf>>,
+    files: Mutex<VecDeque<PathBuf>>,
 }
 
 impl AssetRoots {
@@ -40,35 +58,61 @@ impl AssetRoots {
     pub fn allow_directory(&self, dir: &Path) {
         if let Ok(canonical) = paths::canonicalize_existing(dir) {
             if canonical.is_dir() {
-                let mut roots = self.roots.lock();
-                if roots.len() < 64 || roots.contains(&canonical) {
-                    roots.insert(canonical);
-                }
+                push_bounded(&self.roots, canonical, MAX_ROOTS);
             }
+        }
+    }
+
+    /// Allow the directories a document's relative links can reach.
+    ///
+    /// Registers the document's own directory and up to
+    /// [`DOCUMENT_ANCESTOR_LEVELS`] ancestors, never including a filesystem
+    /// root. The document file itself is always allowed.
+    pub fn allow_document(&self, document: &Path) {
+        let Ok(canonical) = paths::canonicalize_existing(document) else {
+            return;
+        };
+        push_bounded(&self.files, canonical.clone(), MAX_FILES);
+
+        let mut current = canonical.parent().map(Path::to_path_buf);
+        let mut registered = 0;
+
+        while let Some(directory) = current {
+            // A path with no parent is a filesystem root (`/`, `C:\`).
+            if directory.parent().is_none() {
+                break;
+            }
+            self.allow_directory(&directory);
+            registered += 1;
+            if registered >= DOCUMENT_ANCESTOR_LEVELS {
+                break;
+            }
+            current = directory.parent().map(Path::to_path_buf);
         }
     }
 
     pub fn revoke_directory(&self, dir: &Path) {
         let canonical =
             paths::canonicalize_existing(dir).unwrap_or_else(|_| paths::normalize_lexically(dir));
-        self.roots.lock().remove(&canonical);
+        self.roots.lock().retain(|entry| entry != &canonical);
     }
 
     pub fn allow_file(&self, file: &Path) {
         if let Ok(canonical) = paths::canonicalize_existing(file) {
-            let mut files = self.files.lock();
-            if files.len() < 256 || files.contains(&canonical) {
-                files.insert(canonical);
-            }
+            push_bounded(&self.files, canonical, MAX_FILES);
         }
     }
 
     pub fn revoke_file(&self, file: &Path) {
         let canonical =
             paths::canonicalize_existing(file).unwrap_or_else(|_| paths::normalize_lexically(file));
-        self.files.lock().remove(&canonical);
+        self.files.lock().retain(|entry| entry != &canonical);
     }
 
+    /// Drop every derived root, keeping only what the caller re-registers.
+    ///
+    /// Used before a full refresh so that closing a document actually revokes
+    /// the ancestors it had brought into scope.
     pub fn clear(&self) {
         self.roots.lock().clear();
         self.files.lock().clear();
@@ -84,20 +128,32 @@ impl AssetRoots {
             return None;
         }
 
+        let canonical = paths::canonicalize_existing(requested).ok()?;
+        if self.allows(&canonical) {
+            Some(canonical)
+        } else {
+            None
+        }
+    }
+
+    /// Whether a path is inside the registered reach, ignoring the extension
+    /// filter. Used by the diagnostics command so the preview can tell "outside
+    /// the allowed folders" apart from "file does not exist".
+    pub fn allows(&self, requested: &Path) -> bool {
         // Canonicalise first: this collapses `..` and resolves symlinks, so a
         // link inside the workspace pointing at `/etc/shadow` is rejected.
-        let canonical = paths::canonicalize_existing(requested).ok()?;
+        let Ok(canonical) = paths::canonicalize_existing(requested) else {
+            return false;
+        };
 
-        if self.files.lock().contains(&canonical) {
-            return Some(canonical);
+        if self.files.lock().iter().any(|entry| entry == &canonical) {
+            return true;
         }
 
-        let roots = self.roots.lock();
-        if roots.iter().any(|root| paths::is_within(root, &canonical)) {
-            return Some(canonical);
-        }
-
-        None
+        self.roots
+            .lock()
+            .iter()
+            .any(|root| paths::is_within(root, &canonical))
     }
 
     /// Directories currently allowed; surfaced in the diagnostics panel.
@@ -114,7 +170,24 @@ impl AssetRoots {
                 .map(|p| p.to_string_lossy().into_owned()),
         );
         all.sort();
+        all.dedup();
         all
+    }
+}
+
+/// Append to a bounded queue, moving an existing entry to the back.
+///
+/// Silently dropping new entries once a cap is reached used to mean that the
+/// most recently opened document could lose its access; evicting the oldest
+/// instead keeps the newest — which is what the user is looking at — working.
+fn push_bounded(queue: &Mutex<VecDeque<PathBuf>>, value: PathBuf, limit: usize) {
+    let mut guard = queue.lock();
+    if let Some(index) = guard.iter().position(|entry| entry == &value) {
+        guard.remove(index);
+    }
+    guard.push_back(value);
+    while guard.len() > limit {
+        guard.pop_front();
     }
 }
 
@@ -159,7 +232,11 @@ pub fn respond<R: Runtime>(
     request: &Request<Vec<u8>>,
 ) -> Response<Vec<u8>> {
     let app = ctx.app_handle();
-    let Some(state) = app.try_state::<AssetRoots>() else {
+    // `AssetRoots` is a field of `AppState`, so it must be reached through the
+    // managed `AppState` — asking for it directly always comes back empty and
+    // turned every image request into a 500.
+    let Some(state) = app.try_state::<crate::state::AppState>() else {
+        log::error!("asset request arrived before application state was managed");
         return deny(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
@@ -171,7 +248,7 @@ pub fn respond<R: Runtime>(
     let decoded = percent_encoding::percent_decode_str(encoded).decode_utf8_lossy();
     let requested = PathBuf::from(decoded.as_ref());
 
-    let Some(resolved) = state.resolve(&requested) else {
+    let Some(resolved) = state.assets.resolve(&requested) else {
         log::debug!("asset denied: {}", requested.display());
         return deny(StatusCode::FORBIDDEN);
     };

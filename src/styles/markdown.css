@@ -470,3 +470,41 @@
   text-decoration: underline dotted;
   cursor: help;
 }
+
+/* --- images that failed to load ------------------------------------------ */
+
+/*
+ * A broken-image icon says nothing about why. The placeholder names the
+ * reference the author wrote and, once the backend has answered, the reason.
+ */
+.markdown-body .md-image-error {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  max-width: 100%;
+  padding: 10px 12px;
+  margin: 4px 0;
+  border: 1px dashed var(--md-border);
+  border-left: 3px solid var(--md-danger);
+  border-radius: 4px;
+  background: var(--md-code-bg);
+  font-size: 0.88em;
+  line-height: 1.45;
+}
+
+.markdown-body .md-image-error-title {
+  color: var(--md-danger);
+  font-weight: 600;
+}
+
+.markdown-body .md-image-error-path {
+  font-family: ui-monospace, monospace;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  color: var(--md-fg);
+}
+
+.markdown-body .md-image-error-hint {
+  color: var(--md-fg-muted);
+}

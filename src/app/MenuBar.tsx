@@ -6,7 +6,7 @@
  * templates) without a second code path.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { redo, selectAll as selectAllCommand, undo } from "@codemirror/commands";
 import { useSettingsStore } from "@/settings/settingsStore";
 import { useDocumentsStore } from "@/tabs/documentsStore";
@@ -55,6 +55,14 @@ function run(task: () => Promise<unknown>): () => void {
   };
 }
 
+/**
+ * Grace period before a leaf row closes the submenu.
+ *
+ * Long enough for the pointer to cross the small gap between a row and the
+ * submenu beside it, short enough that leaving the menu still feels immediate.
+ */
+const SUBMENU_CLOSE_DELAY_MS = 200;
+
 const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
 
@@ -62,6 +70,39 @@ export function MenuBar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  /** Drop a scheduled submenu close. */
+  const cancelPendingClose = useCallback(() => {
+    if (closeTimer.current !== undefined) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = undefined;
+    }
+  }, []);
+
+  useEffect(() => cancelPendingClose, [cancelPendingClose]);
+
+  /**
+   * Hover behaviour for rows in the top-level list.
+   *
+   * A row that owns a submenu opens it immediately. A leaf row schedules the
+   * close instead of applying it, which leaves the pointer time to travel
+   * diagonally into the submenu without passing through a gap.
+   */
+  const handleRowHover = useCallback(
+    (label: string | null) => {
+      cancelPendingClose();
+      if (label !== null) {
+        setOpenSubmenu(label);
+        return;
+      }
+      closeTimer.current = setTimeout(() => {
+        closeTimer.current = undefined;
+        setOpenSubmenu(null);
+      }, SUBMENU_CLOSE_DELAY_MS);
+    },
+    [cancelPendingClose],
+  );
 
   const settings = useSettingsStore((state) => state.settings);
   const patch = useSettingsStore((state) => state.patch);
@@ -405,11 +446,13 @@ export function MenuBar() {
             className={cx("menubar-button", openMenu === title && "is-open")}
             onPointerDown={(event) => {
               event.stopPropagation();
+              cancelPendingClose();
               setOpenMenu(openMenu === title ? null : title);
               setOpenSubmenu(null);
             }}
             onPointerEnter={() => {
               if (openMenu && openMenu !== title) {
+                cancelPendingClose();
                 setOpenMenu(title);
                 setOpenSubmenu(null);
               }
@@ -425,8 +468,10 @@ export function MenuBar() {
                   key={`${entry.label ?? "sep"}-${index}`}
                   entry={entry}
                   openSubmenu={openSubmenu}
-                  onOpenSubmenu={setOpenSubmenu}
+                  onHoverRow={handleRowHover}
+                  onKeepOpen={cancelPendingClose}
                   onClose={() => {
+                    cancelPendingClose();
                     setOpenMenu(null);
                     setOpenSubmenu(null);
                   }}
@@ -443,11 +488,15 @@ export function MenuBar() {
 interface MenuRowProps {
   entry: MenuEntry;
   openSubmenu: string | null;
-  onOpenSubmenu: (label: string | null) => void;
+  /** True for rows rendered inside an open submenu. */
+  nested?: boolean;
+  onHoverRow: (label: string | null) => void;
+  /** Cancel a scheduled submenu close, e.g. while the pointer is inside it. */
+  onKeepOpen: () => void;
   onClose: () => void;
 }
 
-function MenuRow({ entry, openSubmenu, onOpenSubmenu, onClose }: MenuRowProps) {
+function MenuRow({ entry, openSubmenu, nested, onHoverRow, onKeepOpen, onClose }: MenuRowProps) {
   if (entry.separator) return <div className="menu-separator" />;
 
   const hasSubmenu = (entry.items?.length ?? 0) > 0;
@@ -458,7 +507,18 @@ function MenuRow({ entry, openSubmenu, onOpenSubmenu, onClose }: MenuRowProps) {
         type="button"
         className={cx("menu-row", entry.disabled && "is-disabled", openSubmenu === entry.label && "is-open")}
         disabled={entry.disabled}
-        onPointerEnter={() => onOpenSubmenu(hasSubmenu ? (entry.label ?? null) : null)}
+        onPointerEnter={() => {
+          // A row inside an open submenu must leave the parent's selection
+          // alone. Treating it like a top-level row used to clear the open
+          // submenu, unmounting the list the pointer was moving into.
+          if (nested) {
+            // Entering a row inside the open submenu must never schedule a
+            // close, whichever order the browser delivers the enter events in.
+            onKeepOpen();
+            return;
+          }
+          onHoverRow(hasSubmenu ? (entry.label ?? null) : null);
+        }}
         onClick={() => {
           if (hasSubmenu || entry.disabled) return;
           void entry.run?.();
@@ -472,13 +532,15 @@ function MenuRow({ entry, openSubmenu, onOpenSubmenu, onClose }: MenuRowProps) {
       </button>
 
       {hasSubmenu && openSubmenu === entry.label && (
-        <div className="menu-dropdown menu-submenu">
+        <div className="menu-dropdown menu-submenu" onPointerEnter={onKeepOpen}>
           {entry.items?.map((child, index) => (
             <MenuRow
               key={`${child.label ?? "sep"}-${index}`}
               entry={child}
               openSubmenu={openSubmenu}
-              onOpenSubmenu={onOpenSubmenu}
+              nested
+              onHoverRow={onHoverRow}
+              onKeepOpen={onKeepOpen}
               onClose={onClose}
             />
           ))}
