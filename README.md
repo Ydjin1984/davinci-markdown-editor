@@ -30,7 +30,8 @@ other document does. No account, no cloud, no telemetry.
 
 ## Installing
 
-Grab the installer for your platform from the [releases page](../../releases).
+Grab the installer for your platform from the
+[releases page](https://github.com/Ydjin1984/davinci-markdown-editor/releases).
 
 * **Windows** — `DaVinci Markdown Editor_<version>_x64-setup.exe` (NSIS) or the `.msi`.
 * **Linux** — `.deb` (recommended), `.AppImage`, or `.rpm`.
