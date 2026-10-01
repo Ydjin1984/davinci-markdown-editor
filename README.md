@@ -111,7 +111,7 @@ Open the `.dmg`, drag **DaVinci Markdown Editor** onto the _Applications_ shortc
 from _Applications_ — or, from a terminal, mount and copy it in one go:
 
 ```bash
-VERSION=0.2.2
+VERSION=0.2.2        # or any later release
 hdiutil attach ~/Downloads/DaVinci.Markdown.Editor_${VERSION}_aarch64.dmg
 cp -R "/Volumes/DaVinci Markdown Editor/DaVinci Markdown Editor.app" /Applications/
 hdiutil detach "/Volumes/DaVinci Markdown Editor"
@@ -138,7 +138,7 @@ xattr -dr com.apple.quarantine "/Applications/DaVinci Markdown Editor.app"
 >
 > **What is inside.** `CFBundleIdentifier` is `io.davinci.markdown`, the executable is
 > `Contents/MacOS/davinci-markdown` and the remaining configuration is `Contents/Resources/icon.icns`
-> — the application icon, carrying the full 16–1024 px set. The bundle declares
+> — the application icon, across the whole size ladder macOS asks for. The bundle declares
 > `LSMinimumSystemVersion` 10.15 and `NSHighResolutionCapable`. Both architectures are built by the
 > `macOS` job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `macos-14` for the
 > `aarch64` image, `macos-13` for `x64` — and
@@ -190,9 +190,9 @@ the application is already running is handed to that instance rather than droppe
 | New file                     | `Ctrl+N`                         | `⌘+N`                   |
 | Save                         | `Ctrl+S`                         | `⌘+S`                   |
 | Save As                      | `Ctrl+Shift+S`                   | `⌘+Shift+S`             |
-| Close tab                    | `Ctrl+W`                         | `⌘+W`                   |
-| Next / previous tab          | `Ctrl+Tab` / `Ctrl+Shift+Tab`    | `⌘+Tab`                 |
-| Find / Replace               | `Ctrl+F` / `Ctrl+H`              | `⌘+F` / `⌘+H`           |
+| Close tab                    | `Ctrl+W`                         | `Ctrl+W` [^macos-keys]  |
+| Next / previous tab          | `Ctrl+Tab` / `Ctrl+Shift+Tab`    | `Ctrl+Tab` / `Ctrl+Shift+Tab` |
+| Find / Replace               | `Ctrl+F` / `Ctrl+H`              | `⌘+F` / `Ctrl+H`        |
 | Bold / Italic / inline code  | `Ctrl+B` / `Ctrl+I` / `Ctrl+E`   | `⌘+B` / `⌘+I` / `⌘+E`   |
 | Link / image                 | `Ctrl+K` / `Ctrl+Shift+K`        | `⌘+K` / `⌘+Shift+K`     |
 | Headings 1–4, clear          | `Ctrl+Shift+1…4`, `Ctrl+Shift+0` | `⌘+Shift+1…4`           |
@@ -201,6 +201,13 @@ the application is already running is handed to that instance rather than droppe
 | **Export as PDF**            | `Ctrl+P`                         | `⌘+P`                   |
 | **Export as HTML**           | `Ctrl+Shift+E`                   | `⌘+Shift+E`             |
 | Settings                     | `Ctrl+,`                         | `⌘+,`                   |
+
+[^macos-keys]: Three `⌘` combinations belong to the system on macOS and never reach the editor, so
+    the app accepts `Ctrl` for the same commands: `⌘W` is the native _Close Window_ item and closes
+    the window, `⌘H` hides the application, and `⌘Tab` is the system application switcher. `⌘Q`
+    is the standard Quit and works normally — the application menu's Quit item runs the same
+    unsaved-changes prompt as closing the window instead of terminating outright. The shortcuts
+    above are the ones that actually fire.
 
 ---
 

@@ -163,6 +163,12 @@ pub fn run() {
                 platform::disable_browser_accelerator_keys(&window);
             }
 
+            // On macOS the default menu's Quit runs NSApplication's
+            // terminate:, which would exit without the unsaved-changes prompt.
+            // Replace it with one that asks the frontend first.
+            #[cfg(target_os = "macos")]
+            platform::install_macos_quit_menu(app)?;
+
             // Safety net: if the frontend never reports readiness, still show a
             // window rather than leaving the user with a silent process.
             let fallback_handle = handle.clone();

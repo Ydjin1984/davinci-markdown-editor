@@ -290,17 +290,13 @@ export function App() {
     void (async () => {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       const current = getCurrentWindow();
-      const unlisten = await current.onCloseRequested(async (event) => {
-        const dirty = dirtyDocuments();
-        if (dirty.length === 0) {
-          await writeSession();
-          return;
-        }
 
-        event.preventDefault();
-
+      // Shared by the window close request and the macOS application menu's
+      // Quit item. Saving and confirming first, then destroying the window —
+      // destroying the last window ends the process.
+      const runExitFlow = async () => {
         // Save everything that can be saved without asking.
-        for (const document of dirty) {
+        for (const document of dirtyDocuments()) {
           if (!document.path) continue; // Untitled documents need a decision.
           await useDocumentsStore.getState().save(document.id);
         }
@@ -322,9 +318,32 @@ export function App() {
 
         await writeSession();
         await current.destroy();
+      };
+
+      const unlistenClose = await current.onCloseRequested(async (event) => {
+        if (dirtyDocuments().length === 0) {
+          await writeSession();
+          return;
+        }
+        event.preventDefault();
+        await runExitFlow();
       });
-      if (cancelled) unlisten();
-      else dispose = unlisten;
+
+      // The macOS menu's Quit item emits this event instead of terminating
+      // the process, so unsaved work gets the same prompt as ⌘W.
+      const unlistenQuit = await ipc.onQuitRequested(() => {
+        void runExitFlow();
+      });
+
+      if (cancelled) {
+        unlistenClose();
+        unlistenQuit();
+      } else {
+        dispose = () => {
+          unlistenClose();
+          unlistenQuit();
+        };
+      }
     })();
 
     return () => {

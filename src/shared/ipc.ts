@@ -31,6 +31,7 @@ import type {
 export const EVENTS = {
   openPaths: "app://open-paths",
   fsChanged: "fs://changed",
+  quitRequested: "app://quit-requested",
 } as const;
 
 /** Normalised failure raised by any command. */
@@ -87,6 +88,10 @@ export const onOpenPaths = (handler: (payload: LaunchPayload) => void): Promise<
 
 export const onFsChanged = (handler: (payload: FsChangedPayload) => void): Promise<UnlistenFn> =>
   listen<FsChangedPayload>(EVENTS.fsChanged, (event) => handler(event.payload));
+
+/** macOS only: the application menu's Quit item asked us before exiting. */
+export const onQuitRequested = (handler: () => void): Promise<UnlistenFn> =>
+  listen(EVENTS.quitRequested, () => handler());
 
 // ---------------------------------------------------------------------------
 // Settings and session
