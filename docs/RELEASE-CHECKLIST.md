@@ -17,7 +17,7 @@ Run `npm run verify` and confirm all of it is green before touching a clean mach
 - [ ] `npm run fmt:rust:check` — Rust formatting clean
 - [ ] `npm run lint:rust` — clippy with `-D warnings`
 - [ ] `npm run test:rust` — Rust suite passes
-- [ ] CI is green on the release commit for both `build-windows` and `build-linux`
+- [ ] CI is green on the release commit: `build-windows`, `build-linux` and `build-macos`
 
 ---
 
@@ -166,6 +166,9 @@ explicitly rather than assuming.
 - [ ] A file on an external volume opens
 - [ ] With the application running, double-clicking a `.md` adds a tab to the existing window
 - [ ] The window comes to the front
+- [ ] `⌘Q` with unsaved changes asks whether to discard them — the application menu's Quit item
+      runs the same flow as closing the window instead of terminating outright
+- [ ] `⌘Q` with nothing unsaved exits immediately
 
 **Uninstall**
 
