@@ -1,87 +1,99 @@
-<img src="src/assets/logo.png" alt="DaVinci Cyber Engineering" width="112" align="right" />
+<div align="center">
+
+<img src="src-tauri/icons/128x128.png" alt="DaVinci Markdown Editor" width="128" />
 
 # DaVinci Markdown Editor
 
-A cross-platform, natively integrated Markdown editor for **Windows** and **Linux** with
-GitHub-compatible rendering, first-class Mermaid diagrams and a live preview.
+**A Markdown editor that behaves like a document, not like a web page in a window.**
 
-Open a `.md` file in Explorer or your file manager and it appears in a tab — the same way any
-other document does. No account, no cloud, no telemetry.
+GitHub Flavored Markdown · Mermaid diagrams · KaTeX math · Shiki highlighting · live preview ·
+native file associations on Windows, Linux and macOS
 
-![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB) ![React 19](https://img.shields.io/badge/React-19-61DAFB) ![Rust](https://img.shields.io/badge/Rust-stable-000000)
+[![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
+[![Rust](https://img.shields.io/badge/Rust-1.82+-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-119%20frontend%20%C2%B7%2069%20Rust-success)](#testing)
 
----
+<img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
-## Publisher
-
-**DaVinci Cyber Engineering** — _Secure · Analyze · Engineer · Build_
-
-|                     |                                                     |
-| ------------------- | --------------------------------------------------- |
-| Website             | <https://www.davinci-cyber-engineering.uz/>         |
-| Email               | <info@davinci-cyber-engineering.uz>                 |
-| Support the project | USDT · TRC20 · `TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41` |
-
-Donations are voluntary and buy no support, features or licences. The same details, with a
-scannable QR code, are in the application under _Help → About_.
+</div>
 
 ---
 
-## Agent skill: `markdown-diagrams`
+## Why this one
 
-The repository ships an agent skill that makes an AI assistant write Markdown this editor renders
-well: [`skills/markdown-diagrams`](skills/markdown-diagrams/SKILL.md).
+**It installs as a document handler.** Double-click a `.md` file in Explorer or your file manager
+and it opens in a tab of the running window — a second launch hands the path to the first instead
+of starting another process. No account, no cloud, nothing phoning home.
 
-It requires every `.md` an assistant produces to carry at least one Mermaid diagram — chosen by
-what the section actually says, not at random — alongside GFM tables for comparisons, task lists
-for status, fenced code with a language, and KaTeX for formulas. It also lists the Mermaid
-mistakes that stop a diagram rendering at all: unquoted labels containing brackets or commas, a
-node named `end`, the wrong flow direction.
+**Diagrams are a first-class feature, not a plugin.** Mermaid is rendered, zoomable and exportable
+as SVG, and a diagram that fails to parse shows an error card _with its source still visible_ while
+the rest of the document keeps rendering.
 
-Copy the folder into your agent and it will produce structured documents instead of walls of
-prose — the difference between a document that uses what this editor can do and one that does
-not. Installation paths for the common tools are in [`skills/README.md`](skills/README.md).
+**Nothing is lost.** Saves are atomic, the watcher detects external edits and never mistakes your
+own save for one, and a file that changed on disk is not overwritten without asking.
 
----
+**A Markdown file is untrusted input.** Raw HTML is sanitised, KaTeX runs with `trust` disabled,
+the preview cannot read outside the folders you opened, and the webview holds almost no Tauri
+permissions at all.
 
-## What it does
+**It exports properly.** PDF is real, selectable, paginated text laid out by the same engine that
+drew the preview. HTML is one self-contained file — stylesheets, images and the 19 KaTeX web fonts
+embedded — that opens correctly on a machine that has never seen this project.
 
-| Area          | What you get                                                                                                                                                                    |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rendering** | CommonMark + GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes, and YAML/TOML front matter shown as a metadata card rather than a stray heading |
-| **Diagrams**  | Mermaid: flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline, pie — with zoom, fit and SVG export                                                        |
-| **Code**      | Shiki highlighting for every bundled grammar, copy button per block, theme matched to light/dark                                                                                |
-| **Math**      | KaTeX inline (`$…$`) and display (`$$…$$`) with error isolation                                                                                                                 |
-| **Editor**    | CodeMirror 6: multi-cursor, code folding, bracket matching, find & replace, per-tab undo history                                                                                |
-| **Preview**   | Debounced live update (~90 ms), editor↔preview scroll sync, anchor navigation                                                                                                   |
-| **Workspace** | Folder tree, file create/rename/delete (to the trash), outline panel, recent files                                                                                              |
-| **Files**     | UTF-8, UTF-8 BOM, UTF-16, legacy encodings; LF and CRLF preserved per file                                                                                                      |
-| **Safety**    | Untrusted document model, sanitised HTML, capability-scoped Tauri, atomic writes, external-change detection                                                                     |
-| **OS**        | `.md`/`.markdown` file associations, Open With, double-click, single-instance file forwarding                                                                                   |
-| **Themes**    | Light / Dark / System with GitHub-matching preview styles                                                                                                                       |
+**It starts instantly and stays small.** Measured on the release build: a usable window in about
+110 ms, and roughly 25 MB of resident memory while editing. There is no runtime to boot first.
 
 ---
 
-## Installing
+## Install
 
-Grab the installer for your platform from the
-[releases page](https://github.com/Ydjin1984/davinci-markdown-editor/releases).
+### Windows 10 / 11
 
-- **Windows** — `DaVinci Markdown Editor_<version>_x64-setup.exe` (NSIS) or the `.msi`.
-- **Linux** — `.deb` (recommended), `.AppImage`, or `.rpm`.
+Download from the [releases page](https://github.com/Ydjin1984/davinci-markdown-editor/releases).
 
-Verify the download against `SHA256SUMS.txt` before installing. Builds are not code-signed yet,
-so Windows SmartScreen will ask for confirmation on first launch.
+| File          | Notes                                                                  |
+| ------------- | ---------------------------------------------------------------------- |
+| `…-setup.exe` | NSIS installer, recommended. Per-user, no administrator rights needed. |
+| `….msi`       | MSI for managed deployments.                                           |
 
-### Making it the default Markdown application
+Both register `.md`, `.markdown`, `.mdown`, `.mkdn` and `.mkd`, add an **Open with** entry, and
+remove their registration on uninstall. WebView2 is required and is already present on Windows 10
+1803+ and Windows 11.
 
-- **Windows** — Right-click any `.md` file → _Open with_ → _Choose another app_ → pick
-  _DaVinci Markdown Editor_ → tick _Always use this app_.
-- **Linux (GNOME)** — Right-click → _Properties_ → _Open With_, or run
-  `xdg-mime default io.davinci.markdown.desktop text/markdown`.
+SmartScreen warns about an unknown publisher because the installers are not code-signed yet;
+_More info → Run anyway_ continues.
 
-The installer registers the application as a handler for `text/markdown`; it does not silently
-seize the association.
+### Linux
+
+| Distribution               | Install                                                                 |
+| -------------------------- | ----------------------------------------------------------------------- |
+| **Debian / Ubuntu / Kali** | `sudo apt install ./DaVinci.Markdown.Editor_<version>_amd64.deb`        |
+| **Fedora / RHEL**          | `sudo dnf install ./DaVinci.Markdown.Editor-<version>-1.x86_64.rpm`     |
+| **Any**                    | `chmod +x DaVinci.Markdown.Editor_<version>_amd64.AppImage` then run it |
+
+The `.deb` and `.rpm` declare their WebKitGTK and GTK dependencies, install a desktop entry and
+register `text/markdown`, so the application appears in _Open With_ and can be set as the default
+handler. The AppImage carries its own WebKit stack, which is why it is much larger — prefer a
+package for your distribution when one is available.
+
+To make it the default for Markdown files:
+
+```bash
+xdg-mime default "DaVinci Markdown Editor.desktop" text/markdown
+```
+
+> The desktop file keeps the name the bundler derives from the product name, which contains spaces
+> — hence the quotes. The graphical route (_Properties → Open With → Set as default_) does not need
+> it.
+
+### macOS
+
+Not built yet. The bundle configuration is complete (`bundle.macOS` in `src-tauri/tauri.conf.json`)
+and the entitlements WebKit needs under the hardened runtime are in
+[`src-tauri/macos/entitlements.plist`](src-tauri/macos/entitlements.plist), but producing and
+signing a `.dmg` needs a macOS machine with Xcode. That is what the workflow's macOS job is for.
 
 ---
 
@@ -89,39 +101,147 @@ seize the association.
 
 ```bash
 davinci-markdown README.md                 # open a file
-davinci-markdown README.md CHANGELOG.md    # open several
+davinci-markdown README.md CHANGELOG.md    # open several as tabs
 davinci-markdown ./docs/                   # open a folder as the workspace
 davinci-markdown --version
 davinci-markdown --help
 ```
 
-If an instance is already running, the paths are forwarded to it as new tabs and the window is
-raised — a second process is never started, and no file argument is dropped during the hand-off.
+Paths containing spaces and non-ASCII characters work on every platform, and anything opened while
+the application is already running is handed to that instance rather than dropped.
+
+---
+
+## What it does
+
+| Area          |                                                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Rendering** | CommonMark and GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes, and YAML or TOML front matter shown as a metadata card rather than a stray heading |
+| **Diagrams**  | Flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline and pie — with zoom, fit, and SVG copy or export                                                          |
+| **Code**      | Shiki highlighting for every bundled grammar, loaded on demand, with a copy button per block and a theme matching the light or dark mode                                             |
+| **Math**      | KaTeX inline and display, with a malformed formula isolated to its own block                                                                                                         |
+| **Editor**    | CodeMirror 6: multi-cursor, code folding, bracket matching, find and replace, and per-tab undo history that survives switching tabs                                                  |
+| **Preview**   | Debounced live update, editor↔preview scroll synchronisation, anchor navigation                                                                                                      |
+| **Workspace** | Folder tree, create, rename, delete to the trash, outline panel, recent files                                                                                                        |
+| **Export**    | PDF with real selectable text; a single self-contained HTML file                                                                                                                     |
+| **Files**     | UTF-8, UTF-8 BOM, UTF-16 and legacy encodings; LF and CRLF preserved per file; atomic writes                                                                                         |
+| **Themes**    | Light, Dark and System, applied to the shell and the preview together                                                                                                                |
 
 ---
 
 ## Keyboard shortcuts
 
-| Action                       | Windows / Linux                                  | macOS                       |
-| ---------------------------- | ------------------------------------------------ | --------------------------- |
-| Open file                    | `Ctrl+O`                                         | `⌘+O`                       |
-| Open folder                  | `Ctrl+Shift+O`                                   | `⌘+Shift+O`                 |
-| New file                     | `Ctrl+N`                                         | `⌘+N`                       |
-| Save                         | `Ctrl+S`                                         | `⌘+S`                       |
-| Save As                      | `Ctrl+Shift+S`                                   | `⌘+Shift+S`                 |
-| Close tab                    | `Ctrl+W`                                         | `⌘+W`                       |
-| Next / previous tab          | `Ctrl+Tab` / `Ctrl+Shift+Tab`                    | `⌘+Tab`                     |
-| Find                         | `Ctrl+F`                                         | `⌘+F`                       |
-| Replace                      | `Ctrl+H`                                         | `⌘+H`                       |
-| Bold / Italic                | `Ctrl+B` / `Ctrl+I`                              | `⌘+B` / `⌘+I`               |
-| Inline code                  | `Ctrl+E`                                         | `⌘+E`                       |
-| Link / image                 | `Ctrl+K` / `Ctrl+Shift+K`                        | `⌘+K` / `⌘+Shift+K`         |
-| Heading 1–4 / clear          | `Ctrl+Shift+1…4` / `Ctrl+Shift+0`                | `⌘+Shift+1…4` / `⌘+Shift+0` |
-| Bullet / ordered / task list | `Ctrl+Shift+8` / `Ctrl+Shift+7` / `Ctrl+Shift+9` | same with `⌘`               |
-| Toggle preview               | `Ctrl+Shift+V`                                   | `⌘+Shift+V`                 |
-| Export as PDF                | `Ctrl+P`                                         | `⌘+P`                       |
-| Export as HTML               | `Ctrl+Shift+E`                                   | `⌘+Shift+E`                 |
-| Settings                     | `Ctrl+,`                                         | `⌘+,`                       |
+| Action                       | Windows / Linux                  | macOS                   |
+| ---------------------------- | -------------------------------- | ----------------------- |
+| Open file                    | `Ctrl+O`                         | `⌘+O`                   |
+| Open folder                  | `Ctrl+Shift+O`                   | `⌘+Shift+O`             |
+| New file                     | `Ctrl+N`                         | `⌘+N`                   |
+| Save                         | `Ctrl+S`                         | `⌘+S`                   |
+| Save As                      | `Ctrl+Shift+S`                   | `⌘+Shift+S`             |
+| Close tab                    | `Ctrl+W`                         | `⌘+W`                   |
+| Next / previous tab          | `Ctrl+Tab` / `Ctrl+Shift+Tab`    | `⌘+Tab`                 |
+| Find / Replace               | `Ctrl+F` / `Ctrl+H`              | `⌘+F` / `⌘+H`           |
+| Bold / Italic / inline code  | `Ctrl+B` / `Ctrl+I` / `Ctrl+E`   | `⌘+B` / `⌘+I` / `⌘+E`   |
+| Link / image                 | `Ctrl+K` / `Ctrl+Shift+K`        | `⌘+K` / `⌘+Shift+K`     |
+| Headings 1–4, clear          | `Ctrl+Shift+1…4`, `Ctrl+Shift+0` | `⌘+Shift+1…4`           |
+| Bullet / ordered / task list | `Ctrl+Shift+8` / `7` / `9`       | `⌘+Shift+8` / `7` / `9` |
+| Toggle preview               | `Ctrl+Shift+V`                   | `⌘+Shift+V`             |
+| **Export as PDF**            | `Ctrl+P`                         | `⌘+P`                   |
+| **Export as HTML**           | `Ctrl+Shift+E`                   | `⌘+Shift+E`             |
+| Settings                     | `Ctrl+,`                         | `⌘+,`                   |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph UI["React + TypeScript"]
+        ED["CodeMirror 6<br/>source editor"]
+        PV["Preview pane"]
+        EX["Explorer · Outline · Tabs · Settings"]
+    end
+
+    subgraph ENGINE["Markdown engine — no UI dependency"]
+        PIPE["unified pipeline<br/>remark → rehype"]
+        SAN["Sanitiser"]
+        MM["Mermaid"]
+        KX["KaTeX"]
+        SH["Shiki"]
+    end
+
+    subgraph CORE["Rust core — Tauri 2"]
+        FS["Filesystem<br/>encoding · EOL · atomic writes"]
+        WT["Watcher"]
+        AS["mdasset://<br/>access-controlled assets"]
+        OS["Single instance · CLI · file associations"]
+    end
+
+    ED --> PIPE
+    PIPE --> SAN --> MM --> KX --> SH --> PV
+    UI <-->|IPC| CORE
+    AS --> PV
+    FS --> PIPE
+    WT --> UI
+```
+
+### Design decisions worth knowing
+
+**The Markdown engine has no UI dependency.** `renderMarkdown(source, options)` takes a string and
+returns HTML, an outline and the diagram sources. That keeps it testable on its own and reusable by
+the export features.
+
+**Sanitisation is the security boundary, and its position in the pipeline is deliberate.** Raw HTML
+is parsed and then forced through a schema; KaTeX, Shiki and Mermaid run _after_ it, building markup
+from text that has already been verified. KaTeX runs with `trust: false`, so `\href`, `\url` and
+`\htmlClass` stay inert.
+
+**The preview cannot read your disk.** Images resolve through `mdasset://`, which serves only files
+under a directory you actually opened — the workspace root, the document's folder, or one of its
+parent folders up to three levels — and only extensions that are safe to inline. Symlinks are
+resolved before the check. _Tools → Preview Asset Access_ lists the current reach, and an image that
+is refused explains why instead of showing a broken icon.
+
+**The webview has almost no Tauri permissions.** File dialogs, shell integration and every
+filesystem operation go through reviewed Rust commands rather than blanket plugin permissions; the
+capability file grants only window and event access.
+
+**Saving is atomic and never clobbers external edits.** Writes go to a sibling temp file, keep the
+original permissions and are renamed into place. A save carries the hash of the content the editor
+loaded; if the file changed underneath, the write is refused and you are asked what to do.
+
+**The watcher recognises its own writes.** After a save, the resulting filesystem notification is
+compared against the content just written and dropped, so `Ctrl+S` never raises a "changed on disk"
+prompt against itself.
+
+**Per-tab undo history survives tab switching.** One CodeMirror view is reused and the whole
+`EditorState` is swapped, which preserves history without keeping a view per tab.
+
+**Diagrams are cached by content and theme.** Unchanged diagrams are re-inserted from cache on the
+next keystroke, and every render is generation-checked so a slow async render cannot overwrite a
+newer result. Mermaid runs with `securityLevel: 'strict'` and SVG text labels rather than
+`foreignObject`, so an exported SVG opens anywhere.
+
+### Bundle size note
+
+Shiki ships 600+ grammars and the build keeps them all available as lazily loaded chunks, which is
+why `dist/` is ~17 MB. Only the ~13 common languages load eagerly; the rest are fetched the first
+time a fence uses them. If installer size matters more than grammar coverage, restrict
+`EAGER_LANGUAGES` in `src/markdown/code/highlighter.ts`.
+
+---
+
+## Agent skill
+
+The repository ships [`skills/markdown-diagrams`](skills/markdown-diagrams/SKILL.md): an agent skill
+that makes an AI assistant write Markdown this editor renders well — at least one Mermaid diagram
+per document, chosen by what the section actually says, plus GFM tables for comparisons, task lists
+for status, fenced code with a language, and KaTeX for formulas. It also lists the Mermaid mistakes
+that stop a diagram rendering at all.
+
+Copy the folder into your assistant and you get structured documents instead of walls of prose.
+Installation paths are in [`skills/README.md`](skills/README.md). The
+[demo document](docs/demo.md) is written in that style and makes a good first thing to open.
 
 ---
 
@@ -132,33 +252,32 @@ raised — a second process is never started, and no file argument is dropped du
 - **Node.js** ≥ 20.19 and npm
 - **Rust** stable (1.82+)
 - Platform toolchain:
-  - **Windows** — Visual Studio Build Tools with the _Desktop development with C++_ workload;
-    WebView2 is preinstalled on Windows 10 (1803+) and Windows 11.
-  - **Linux (Debian/Ubuntu)** —
+  - **Windows** — Visual Studio Build Tools with _Desktop development with C++_. WebView2 is
+    preinstalled on Windows 10 (1803+) and Windows 11.
+  - **Debian / Ubuntu** —
     ```bash
     sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev \
       libayatana-appindicator3-dev librsvg2-dev patchelf build-essential
     ```
-  - **Linux (Fedora/RHEL)** —
+  - **Fedora / RHEL** —
     ```bash
     sudo dnf install webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel \
       librsvg2-devel patchelf
     ```
   - **Arch** — `sudo pacman -S webkit2gtk-4.1 gtk3 libappindicator-gtk3 librsvg patchelf`
-
-### Commands
+  - **macOS** — Xcode command line tools.
 
 ```bash
 npm install
 
-npm run app:dev      # run the app with hot reload
-npm run app:build    # produce release installers in src-tauri/target/release/bundle
+npm run app:dev      # run with hot reload
+npm run app:build    # release installers in src-tauri/target/release/bundle
 ```
 
 ### Verifying a checkout
 
 ```bash
-npm run verify       # typecheck + lint + frontend tests + clippy + Rust tests
+npm run verify       # typecheck, lint, format, tests, clippy, cargo test
 ```
 
 Individually:
@@ -174,153 +293,109 @@ npm run test:rust    # cargo test
 
 ---
 
-## Architecture
-
-```
-src/                      React + TypeScript front end
-├── app/                  Shell: menu bar, status bar, dialogs, toasts, error boundary
-├── editor/               CodeMirror 6: setup, themes, Markdown commands, cursor store
-├── markdown/             Markdown engine — deliberately UI-free
-│   ├── renderer/         unified pipeline + custom rehype plugins
-│   ├── sanitize/         hast-util-sanitize policy
-│   └── code/             Shiki highlighter
-├── mermaid/              Lazy Mermaid renderer, caching, hydration
-├── preview/              Preview pane, scroll sync, HTML export
-├── tabs/                 Documents and tabs
-├── explorer/             Workspace file tree
-├── outline/              Heading outline
-├── settings/             Settings store and dialog
-├── shared/               IPC wrappers, types, i18n, utilities
-└── styles/               Application chrome + Markdown rendering CSS
-
-src-tauri/src/            Rust back end
-├── lib.rs                Entry point, plugin and command registration
-├── commands.rs           Every operation the webview may request
-├── filesystem.rs         Encoding/EOL detection, atomic writes
-├── workspace.rs          Directory listing and file operations
-├── watcher.rs            Debounced filesystem watching
-├── asset.rs              mdasset:// protocol with an access allow-list
-├── settings.rs           settings.json / session.json
-├── paths.rs              Lexical normalisation and containment checks
-├── cli.rs                Argument parsing
-├── state.rs              Shared application state
-└── error.rs              Structured IPC errors
-```
-
-### Design decisions worth knowing
-
-**The Markdown engine has no UI dependency.** `renderMarkdown(source, options)` takes a string and
-returns HTML plus an outline. That keeps it testable in isolation and reusable by the feature set
-still to come (PDF export, an internal viewer).
-
-**Sanitisation is the security boundary, and its position in the pipeline is deliberate.**
-Raw HTML is parsed and then forced through the schema; KaTeX, Shiki and Mermaid run _after_ it,
-producing markup from already-verified text. KaTeX runs with `trust: false`, so `\href`, `\url`
-and `\htmlClass` stay inert.
-
-**The preview cannot read your disk.** Images resolve through `mdasset://`, which serves only
-files under a directory you actually opened (the workspace root, or the folder of an open
-document) and only for extensions that are safe to inline. Symlinks are resolved before the
-check, so a link pointing outside the workspace is refused. _Tools → Preview Asset Access_ shows
-the current allow-list.
-
-**The webview has almost no Tauri permissions.** File dialogs, shell integration and filesystem
-access are Rust commands with reviewed argument handling, not blanket plugin permissions. The
-capability file grants only window and event access.
-
-**Saving is atomic and never clobbers external edits.** Writes go to a sibling temp file, keep the
-original permissions and are renamed into place. A save also carries the hash of the content the
-editor loaded; if the file changed underneath, the write is refused and you are asked how to
-proceed.
-
-**The watcher recognises its own writes.** After a save, the resulting filesystem notification is
-matched against the content just written and dropped, so no "changed on disk" prompt appears for
-your own `Ctrl+S`.
-
-**Per-tab undo history survives tab switches.** One CodeMirror view is reused and the whole
-`EditorState` is swapped, which preserves history without keeping one view per tab.
-
-**Diagrams are cached by content and theme.** Unchanged diagrams are re-inserted from cache on the
-next keystroke, so a document with ten diagrams does not re-render ten times per edit. Every
-render is generation-checked, so a slow async render can never overwrite a newer result.
-
-**Mermaid runs with `securityLevel: 'strict'` and `htmlLabels: false`.** Strict mode sanitises the
-generated SVG; SVG text labels instead of `foreignObject` mean an exported SVG opens correctly in
-viewers that do not embed HTML.
-
-### Bundle size note
-
-Shiki ships 600+ grammars, and the build keeps them all available as lazily loaded chunks. This is
-why `dist/` is ~17 MB. Only the ~13 common languages are loaded eagerly; the rest are fetched the
-first time a fence uses them. If installer size matters more than grammar coverage, restrict
-`EAGER_LANGUAGES` in `src/markdown/code/highlighter.ts` and map fewer entries in
-`bundledLanguages`.
-
----
-
 ## Testing
 
 ```bash
-npm run test        # 67 frontend tests
-npm run test:rust   # 49 Rust tests (25 unit + 24 integration)
+npm run test        # 119 frontend tests
+npm run test:rust   # 69 Rust tests
 ```
 
 **Frontend** (`tests/`) covers CommonMark and GFM output, outline extraction, Mermaid fence
-detection, code block handling, KaTeX error isolation, path resolution and the sanitisation policy
-— the latter with explicit XSS vectors (`<script>`, `onerror`, `javascript:`, `data:text/html`,
-`<iframe srcdoc>`, `<style>`, `<form>`, KaTeX `\href`).
+detection, code block handling, KaTeX error isolation, front matter, asset URL resolution and the
+sanitisation policy — the latter with explicit XSS vectors (`<script>`, `onerror`, `javascript:`,
+`data:text/html`, `<iframe srcdoc>`, `<style>`, `<form>`, KaTeX `\href`). The menu bar has its own
+regression test for a submenu that used to vanish as the pointer entered it.
 
-**Rust unit tests** (`src-tauri/src/**`, running under `cargo test --lib`) cover path normalisation
-and containment, CLI parsing, encoding and EOL helpers, binary sniffing, BOM handling, settings
-forward-compatibility and workspace name validation.
+**Rust unit tests** cover path normalisation and containment, CLI parsing, encoding and EOL helpers,
+binary sniffing, BOM handling, settings forward-compatibility, workspace name validation and the
+link policy.
 
 **Rust integration tests** (`src-tauri/tests/`) exercise the real filesystem: UTF-8, BOM, CRLF and
 `windows-1251` round trips, binary refusal, atomic replacement leaving no temporary file behind,
-concurrent writers producing a complete file, `expectedHash` conflict detection, Unicode and
-spaced paths, and read-only detection.
+concurrent writers producing a complete file, `expectedHash` conflict detection, Unicode and spaced
+paths, and the preview's asset access policy.
 
-Cargo requires integration tests to live under `src-tauri/tests/`, so the repository has two test
-roots: the spec's `tests/` layout for the frontend suite, and Cargo's convention for Rust.
+Cargo requires integration tests under `src-tauri/tests/`, so the repository has two test roots: the
+`tests/` layout for the frontend suite and Cargo's convention for Rust.
 
-### Manual checks still required before a release
+### Manual checks before a release
 
-These cannot be automated in CI and belong on the release checklist (spec §30, §32):
-
-- [ ] Clean Windows: install → _Open With_ → set as default → double-click a `.md`
-- [ ] Clean Linux: `.deb` install → application menu → MIME association → double-click a `.md`
-- [ ] A path with spaces and Cyrillic characters opens from the file manager
-- [ ] Double-click while an instance is running adds a tab to that window
-- [ ] Selecting several `.md` files opens all of them
-- [ ] Upgrade over an existing install keeps `settings.json`
+Not automatable in CI. The full matrix — clean installs, file associations, double-click, Unicode
+paths, single-instance hand-off, upgrade and uninstall on both platforms — is in
+[`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md).
 
 ---
 
-## Settings locations
+## Project layout
 
-| Platform | Path                             |
-| -------- | -------------------------------- |
-| Windows  | `%APPDATA%\io.davinci.markdown\` |
-| Linux    | `~/.config/io.davinci.markdown/` |
+```
+src/                     React + TypeScript front end
+├── app/                 Shell: menu bar, status bar, dialogs, toasts, error boundary
+├── editor/              CodeMirror 6: setup, themes, Markdown commands, cursor store
+├── markdown/            Markdown engine — deliberately UI-free
+│   ├── renderer/        unified pipeline and custom rehype plugins
+│   ├── sanitize/        hast-util-sanitize policy
+│   └── code/            Shiki highlighter
+├── mermaid/             Lazy renderer with caching and hydration
+├── preview/             Preview pane, scroll sync, PDF and HTML export
+├── explorer/  outline/  tabs/  settings/  workspace/
+└── styles/              Application chrome, Markdown rendering, print layout
 
-`settings.json` and `session.json` live there. Both are written atomically, and a file that cannot
-be parsed is preserved as `settings.json.corrupt-<timestamp>` rather than silently overwritten.
+src-tauri/src/           Rust back end
+├── commands.rs          Every operation the webview may request
+├── filesystem.rs        Encoding and EOL detection, atomic writes
+├── watcher.rs           Debounced filesystem watching
+├── asset.rs             mdasset:// protocol with an access allow-list
+├── links.rs             Policy for links handed to the operating system
+├── workspace.rs         Directory listing and file operations
+└── settings.rs  state.rs  paths.rs  cli.rs  error.rs  platform.rs
+
+skills/markdown-diagrams/  Agent skill shipped with the project
+docs/                      Demo document, release checklist, screenshots
+```
 
 ---
 
-## Scope
+## FAQ
 
-**In this release** — everything described above.
+**Does it phone home?** No. There is no telemetry, no account and no update check. The only
+outbound access is opening a link you click, and the target is vetted first: only `http`, `https`
+and `mailto`, and never the local machine or a private network.
 
-**Deliberately not included** (spec §36): macOS is optional and untested here; no cloud sync,
-accounts, collaboration, AI assistant, Git client, plugin marketplace, WYSIWYG mode, mobile
-version, embedded browser or telemetry. Telemetry is absent by construction; the settings flag
-exists only to make that explicit.
+**Can a Markdown file execute code?** No. Scripts and event handlers are stripped, raw HTML passes
+through a strict schema, and the Content Security Policy forbids inline script. There is a test for
+each of those.
 
-**Known follow-ups** — drag & drop of images into a document, paste-image-from-clipboard, PDF and
-PNG export, a side-by-side external-change comparison view, and macOS packaging (spec §15, §17,
-§24, §34 Phase 8).
+**How large is it?** The Windows installer is under 6 MB and the Linux package about 7 MB. A running
+window settles around 24–25 MB of resident memory, and reaches a usable window in about 110 ms on
+the machine this was measured on. Your hardware will differ; the figures come from the release
+build, not from a development one.
+
+**Why is the AppImage so much bigger?** It bundles the WebKitGTK stack so it runs on any
+distribution without installing dependencies. The `.deb` and `.rpm` use the system one.
+
+**Does it handle large files?** A 1 MB document is comfortable; CodeMirror is built for that. Very
+large files are worth benchmarking on your own hardware rather than trusting a number from someone
+else's machine.
+
+**Where are my settings?** `%APPDATA%\io.davinci.markdown\` on Windows,
+`~/.config/io.davinci.markdown/` on Linux. `settings.json` and `session.json`, both written
+atomically; a file that cannot be parsed is preserved rather than overwritten.
 
 ---
+
+## Publisher
+
+**DaVinci Cyber Engineering** — _Secure · Analyze · Engineer · Build_
+
+|                     |                                                     |
+| ------------------- | --------------------------------------------------- |
+| Website             | <https://www.davinci-cyber-engineering.uz/>         |
+| Email               | <info@davinci-cyber-engineering.uz>                 |
+| Support the project | USDT · TRC20 · `TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41` |
+
+Donations are voluntary and buy no support, features or licences. The same details, with a
+scannable QR code, are in the application under _Help → About_.
 
 ## Licence
 

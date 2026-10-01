@@ -1,17 +1,25 @@
 [package]
 name = "davinci-markdown-editor"
-version = "0.2.1"
+version = "0.2.2"
 description = "Natively integrated Markdown editor with GitHub Flavored Markdown, Mermaid diagrams and live preview"
 authors = ["DaVinci Cyber Engineering <info@davinci-cyber-engineering.uz>"]
 edition = "2021"
 rust-version = "1.82"
 license = "MIT"
 homepage = "https://www.davinci-cyber-engineering.uz/"
-default-run = "davinci-markdown-editor"
+default-run = "davinci-markdown"
 
 [lib]
 name = "davinci_markdown_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+# The installed binary is `davinci-markdown`, which is the name the installers
+# register, the shell integration documents and the desktop entry launches. It
+# deliberately differs from the crate name, which describes the project rather
+# than the command a user types.
+[[bin]]
+name = "davinci-markdown"
+path = "src/main.rs"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

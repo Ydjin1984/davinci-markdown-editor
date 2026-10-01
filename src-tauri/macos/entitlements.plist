@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for the hardened runtime.
+
+  The application is distributed outside the App Store, so it is not sandboxed
+  and does not need file-access entitlements: the user grants access by opening
+  a document, exactly as on Windows and Linux.
+
+  The runtime hardening that Xcode applies by default forbids the two things
+  WebKit needs, so they are re-enabled here. Without `allow-jit` JavaScriptCore
+  cannot compile its regular expressions ahead of time and the editor is
+  unusably slow; without `disable-library-validation` the app cannot load the
+  WebKit frameworks that ship with the operating system rather than inside the
+  bundle.
+
+  Code signing is not configured yet, so these have no effect until a Developer
+  ID certificate is added under bundle.macOS.signingIdentity.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>
