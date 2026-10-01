@@ -14,34 +14,51 @@ other document does. No account, no cloud, no telemetry.
 
 ## Publisher
 
-**DaVinci Cyber Engineering** — *Secure · Analyze · Engineer · Build*
+**DaVinci Cyber Engineering** — _Secure · Analyze · Engineer · Build_
 
-| | |
-|---|---|
-| Website | <https://www.davinci-cyber-engineering.uz/> |
-| Email | <info@davinci-cyber-engineering.uz> |
+|                     |                                                     |
+| ------------------- | --------------------------------------------------- |
+| Website             | <https://www.davinci-cyber-engineering.uz/>         |
+| Email               | <info@davinci-cyber-engineering.uz>                 |
 | Support the project | USDT · TRC20 · `TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41` |
 
 Donations are voluntary and buy no support, features or licences. The same details, with a
-scannable QR code, are in the application under *Help → About*.
+scannable QR code, are in the application under _Help → About_.
+
+---
+
+## Agent skill: `markdown-diagrams`
+
+The repository ships an agent skill that makes an AI assistant write Markdown this editor renders
+well: [`skills/markdown-diagrams`](skills/markdown-diagrams/SKILL.md).
+
+It requires every `.md` an assistant produces to carry at least one Mermaid diagram — chosen by
+what the section actually says, not at random — alongside GFM tables for comparisons, task lists
+for status, fenced code with a language, and KaTeX for formulas. It also lists the Mermaid
+mistakes that stop a diagram rendering at all: unquoted labels containing brackets or commas, a
+node named `end`, the wrong flow direction.
+
+Copy the folder into your agent and it will produce structured documents instead of walls of
+prose — the difference between a document that uses what this editor can do and one that does
+not. Installation paths for the common tools are in [`skills/README.md`](skills/README.md).
 
 ---
 
 ## What it does
 
-| Area | What you get |
-|---|---|
-| **Rendering** | CommonMark + GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes |
-| **Diagrams** | Mermaid: flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline, pie — with zoom, fit and SVG export |
-| **Code** | Shiki highlighting for every bundled grammar, copy button per block, theme matched to light/dark |
-| **Math** | KaTeX inline (`$…$`) and display (`$$…$$`) with error isolation |
-| **Editor** | CodeMirror 6: multi-cursor, code folding, bracket matching, find & replace, per-tab undo history |
-| **Preview** | Debounced live update (~90 ms), editor↔preview scroll sync, anchor navigation |
-| **Workspace** | Folder tree, file create/rename/delete (to the trash), outline panel, recent files |
-| **Files** | UTF-8, UTF-8 BOM, UTF-16, legacy encodings; LF and CRLF preserved per file |
-| **Safety** | Untrusted document model, sanitised HTML, capability-scoped Tauri, atomic writes, external-change detection |
-| **OS** | `.md`/`.markdown` file associations, Open With, double-click, single-instance file forwarding |
-| **Themes** | Light / Dark / System with GitHub-matching preview styles |
+| Area          | What you get                                                                                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rendering** | CommonMark + GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes, and YAML/TOML front matter shown as a metadata card rather than a stray heading |
+| **Diagrams**  | Mermaid: flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline, pie — with zoom, fit and SVG export                                                        |
+| **Code**      | Shiki highlighting for every bundled grammar, copy button per block, theme matched to light/dark                                                                                |
+| **Math**      | KaTeX inline (`$…$`) and display (`$$…$$`) with error isolation                                                                                                                 |
+| **Editor**    | CodeMirror 6: multi-cursor, code folding, bracket matching, find & replace, per-tab undo history                                                                                |
+| **Preview**   | Debounced live update (~90 ms), editor↔preview scroll sync, anchor navigation                                                                                                   |
+| **Workspace** | Folder tree, file create/rename/delete (to the trash), outline panel, recent files                                                                                              |
+| **Files**     | UTF-8, UTF-8 BOM, UTF-16, legacy encodings; LF and CRLF preserved per file                                                                                                      |
+| **Safety**    | Untrusted document model, sanitised HTML, capability-scoped Tauri, atomic writes, external-change detection                                                                     |
+| **OS**        | `.md`/`.markdown` file associations, Open With, double-click, single-instance file forwarding                                                                                   |
+| **Themes**    | Light / Dark / System with GitHub-matching preview styles                                                                                                                       |
 
 ---
 
@@ -50,17 +67,17 @@ scannable QR code, are in the application under *Help → About*.
 Grab the installer for your platform from the
 [releases page](https://github.com/Ydjin1984/davinci-markdown-editor/releases).
 
-* **Windows** — `DaVinci Markdown Editor_<version>_x64-setup.exe` (NSIS) or the `.msi`.
-* **Linux** — `.deb` (recommended), `.AppImage`, or `.rpm`.
+- **Windows** — `DaVinci Markdown Editor_<version>_x64-setup.exe` (NSIS) or the `.msi`.
+- **Linux** — `.deb` (recommended), `.AppImage`, or `.rpm`.
 
 Verify the download against `SHA256SUMS.txt` before installing. Builds are not code-signed yet,
 so Windows SmartScreen will ask for confirmation on first launch.
 
 ### Making it the default Markdown application
 
-* **Windows** — Right-click any `.md` file → *Open with* → *Choose another app* → pick
-  *DaVinci Markdown Editor* → tick *Always use this app*.
-* **Linux (GNOME)** — Right-click → *Properties* → *Open With*, or run
+- **Windows** — Right-click any `.md` file → _Open with_ → _Choose another app_ → pick
+  _DaVinci Markdown Editor_ → tick _Always use this app_.
+- **Linux (GNOME)** — Right-click → _Properties_ → _Open With_, or run
   `xdg-mime default io.davinci.markdown.desktop text/markdown`.
 
 The installer registers the application as a handler for `text/markdown`; it does not silently
@@ -85,26 +102,26 @@ raised — a second process is never started, and no file argument is dropped du
 
 ## Keyboard shortcuts
 
-| Action | Windows / Linux | macOS |
-|---|---|---|
-| Open file | `Ctrl+O` | `⌘+O` |
-| Open folder | `Ctrl+Shift+O` | `⌘+Shift+O` |
-| New file | `Ctrl+N` | `⌘+N` |
-| Save | `Ctrl+S` | `⌘+S` |
-| Save As | `Ctrl+Shift+S` | `⌘+Shift+S` |
-| Close tab | `Ctrl+W` | `⌘+W` |
-| Next / previous tab | `Ctrl+Tab` / `Ctrl+Shift+Tab` | `⌘+Tab` |
-| Find | `Ctrl+F` | `⌘+F` |
-| Replace | `Ctrl+H` | `⌘+H` |
-| Bold / Italic | `Ctrl+B` / `Ctrl+I` | `⌘+B` / `⌘+I` |
-| Inline code | `Ctrl+E` | `⌘+E` |
-| Link / image | `Ctrl+K` / `Ctrl+Shift+K` | `⌘+K` / `⌘+Shift+K` |
-| Heading 1–4 / clear | `Ctrl+Shift+1…4` / `Ctrl+Shift+0` | `⌘+Shift+1…4` / `⌘+Shift+0` |
-| Bullet / ordered / task list | `Ctrl+Shift+8` / `Ctrl+Shift+7` / `Ctrl+Shift+9` | same with `⌘` |
-| Toggle preview | `Ctrl+Shift+V` | `⌘+Shift+V` |
-| Export as PDF | `Ctrl+P` | `⌘+P` |
-| Export as HTML | `Ctrl+Shift+E` | `⌘+Shift+E` |
-| Settings | `Ctrl+,` | `⌘+,` |
+| Action                       | Windows / Linux                                  | macOS                       |
+| ---------------------------- | ------------------------------------------------ | --------------------------- |
+| Open file                    | `Ctrl+O`                                         | `⌘+O`                       |
+| Open folder                  | `Ctrl+Shift+O`                                   | `⌘+Shift+O`                 |
+| New file                     | `Ctrl+N`                                         | `⌘+N`                       |
+| Save                         | `Ctrl+S`                                         | `⌘+S`                       |
+| Save As                      | `Ctrl+Shift+S`                                   | `⌘+Shift+S`                 |
+| Close tab                    | `Ctrl+W`                                         | `⌘+W`                       |
+| Next / previous tab          | `Ctrl+Tab` / `Ctrl+Shift+Tab`                    | `⌘+Tab`                     |
+| Find                         | `Ctrl+F`                                         | `⌘+F`                       |
+| Replace                      | `Ctrl+H`                                         | `⌘+H`                       |
+| Bold / Italic                | `Ctrl+B` / `Ctrl+I`                              | `⌘+B` / `⌘+I`               |
+| Inline code                  | `Ctrl+E`                                         | `⌘+E`                       |
+| Link / image                 | `Ctrl+K` / `Ctrl+Shift+K`                        | `⌘+K` / `⌘+Shift+K`         |
+| Heading 1–4 / clear          | `Ctrl+Shift+1…4` / `Ctrl+Shift+0`                | `⌘+Shift+1…4` / `⌘+Shift+0` |
+| Bullet / ordered / task list | `Ctrl+Shift+8` / `Ctrl+Shift+7` / `Ctrl+Shift+9` | same with `⌘`               |
+| Toggle preview               | `Ctrl+Shift+V`                                   | `⌘+Shift+V`                 |
+| Export as PDF                | `Ctrl+P`                                         | `⌘+P`                       |
+| Export as HTML               | `Ctrl+Shift+E`                                   | `⌘+Shift+E`                 |
+| Settings                     | `Ctrl+,`                                         | `⌘+,`                       |
 
 ---
 
@@ -112,22 +129,22 @@ raised — a second process is never started, and no file argument is dropped du
 
 ### Prerequisites
 
-* **Node.js** ≥ 20.19 and npm
-* **Rust** stable (1.82+)
-* Platform toolchain:
-  * **Windows** — Visual Studio Build Tools with the *Desktop development with C++* workload;
+- **Node.js** ≥ 20.19 and npm
+- **Rust** stable (1.82+)
+- Platform toolchain:
+  - **Windows** — Visual Studio Build Tools with the _Desktop development with C++_ workload;
     WebView2 is preinstalled on Windows 10 (1803+) and Windows 11.
-  * **Linux (Debian/Ubuntu)** —
+  - **Linux (Debian/Ubuntu)** —
     ```bash
     sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev \
       libayatana-appindicator3-dev librsvg2-dev patchelf build-essential
     ```
-  * **Linux (Fedora/RHEL)** —
+  - **Linux (Fedora/RHEL)** —
     ```bash
     sudo dnf install webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel \
       librsvg2-devel patchelf
     ```
-  * **Arch** — `sudo pacman -S webkit2gtk-4.1 gtk3 libappindicator-gtk3 librsvg patchelf`
+  - **Arch** — `sudo pacman -S webkit2gtk-4.1 gtk3 libappindicator-gtk3 librsvg patchelf`
 
 ### Commands
 
@@ -197,14 +214,14 @@ returns HTML plus an outline. That keeps it testable in isolation and reusable b
 still to come (PDF export, an internal viewer).
 
 **Sanitisation is the security boundary, and its position in the pipeline is deliberate.**
-Raw HTML is parsed and then forced through the schema; KaTeX, Shiki and Mermaid run *after* it,
+Raw HTML is parsed and then forced through the schema; KaTeX, Shiki and Mermaid run _after_ it,
 producing markup from already-verified text. KaTeX runs with `trust: false`, so `\href`, `\url`
 and `\htmlClass` stay inert.
 
 **The preview cannot read your disk.** Images resolve through `mdasset://`, which serves only
 files under a directory you actually opened (the workspace root, or the folder of an open
 document) and only for extensions that are safe to inline. Symlinks are resolved before the
-check, so a link pointing outside the workspace is refused. *Tools → Preview Asset Access* shows
+check, so a link pointing outside the workspace is refused. _Tools → Preview Asset Access_ shows
 the current allow-list.
 
 **The webview has almost no Tauri permissions.** File dialogs, shell integration and filesystem
@@ -269,7 +286,7 @@ roots: the spec's `tests/` layout for the frontend suite, and Cargo's convention
 
 These cannot be automated in CI and belong on the release checklist (spec §30, §32):
 
-- [ ] Clean Windows: install → *Open With* → set as default → double-click a `.md`
+- [ ] Clean Windows: install → _Open With_ → set as default → double-click a `.md`
 - [ ] Clean Linux: `.deb` install → application menu → MIME association → double-click a `.md`
 - [ ] A path with spaces and Cyrillic characters opens from the file manager
 - [ ] Double-click while an instance is running adds a tab to that window
@@ -280,10 +297,10 @@ These cannot be automated in CI and belong on the release checklist (spec §30, 
 
 ## Settings locations
 
-| Platform | Path |
-|---|---|
-| Windows | `%APPDATA%\io.davinci.markdown\` |
-| Linux | `~/.config/io.davinci.markdown/` |
+| Platform | Path                             |
+| -------- | -------------------------------- |
+| Windows  | `%APPDATA%\io.davinci.markdown\` |
+| Linux    | `~/.config/io.davinci.markdown/` |
 
 `settings.json` and `session.json` live there. Both are written atomically, and a file that cannot
 be parsed is preserved as `settings.json.corrupt-<timestamp>` rather than silently overwritten.

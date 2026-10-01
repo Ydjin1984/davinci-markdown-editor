@@ -508,3 +508,67 @@
 .markdown-body .md-image-error-hint {
   color: var(--md-fg-muted);
 }
+
+/* --- front matter -------------------------------------------------------- */
+
+/*
+ * A metadata block at the top of the document. Rendered as a collapsed card so
+ * it can be inspected without competing with the content for attention.
+ */
+.markdown-body .md-frontmatter {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 1px solid var(--md-border-muted);
+  border-radius: 6px;
+  background: var(--md-table-stripe);
+  font-size: 0.85em;
+}
+
+.markdown-body .md-frontmatter-summary {
+  cursor: pointer;
+  padding: 6px 12px;
+  font-weight: 600;
+  color: var(--md-fg-muted);
+  user-select: none;
+}
+
+.markdown-body .md-frontmatter[open] .md-frontmatter-summary {
+  border-bottom: 1px solid var(--md-border-muted);
+}
+
+.markdown-body .md-frontmatter-list {
+  margin: 0;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.markdown-body .md-frontmatter-entry {
+  display: grid;
+  grid-template-columns: minmax(90px, max-content) 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.markdown-body .md-frontmatter-entry dt {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  color: var(--md-fg-muted);
+}
+
+.markdown-body .md-frontmatter-entry dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.markdown-body .md-frontmatter-entry dd em {
+  color: var(--md-fg-muted);
+}
+
+.markdown-body .md-frontmatter-raw {
+  margin: 0;
+  padding: 10px 12px;
+  background: transparent;
+  font-size: 0.95em;
+}

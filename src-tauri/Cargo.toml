@@ -1,6 +1,6 @@
 [package]
 name = "davinci-markdown-editor"
-version = "0.2.0"
+version = "0.2.1"
 description = "Natively integrated Markdown editor with GitHub Flavored Markdown, Mermaid diagrams and live preview"
 authors = ["DaVinci Cyber Engineering <info@davinci-cyber-engineering.uz>"]
 edition = "2021"

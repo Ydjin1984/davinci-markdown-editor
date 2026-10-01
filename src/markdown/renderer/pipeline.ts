@@ -30,6 +30,7 @@ import type { Element, ElementContent, Root } from "hast";
 import { visit } from "unist-util-visit";
 
 import { sanitizeSchema } from "../sanitize/schema";
+import { parseFrontMatter, renderFrontMatter } from "../frontmatter";
 import { rehypeCollectOutline, rehypeMermaid, rehypeShiki, rehypeSourceLines } from "./rehype-plugins";
 import { resolveLinkTarget } from "@/shared/util";
 import { toAssetUrl } from "@/shared/assets";
@@ -244,10 +245,22 @@ export async function renderMarkdown(
   const outline: OutlineItem[] = [];
   const diagrams: string[] = [];
 
+  // Front matter is lifted out before parsing: CommonMark would read its
+  // closing delimiter as a setext heading underline and render the whole block
+  // as one enormous heading. Blank lines take its place so the line numbers
+  // the preview relies on still line up.
+  const frontMatter = parseFrontMatter(source);
+  const body = frontMatter ? frontMatter.padding + frontMatter.rest : source;
+
   try {
     const processor = buildProcessor(resolved, outline, diagrams);
-    const file = await processor.process(source);
-    return { html: String(file), outline, diagrams };
+    const file = await processor.process(body);
+    const html = String(file);
+    return {
+      html: frontMatter ? renderFrontMatter(frontMatter) + html : html,
+      outline,
+      diagrams,
+    };
   } catch (error) {
     console.error("Markdown rendering failed", error);
     return {
