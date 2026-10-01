@@ -9,11 +9,13 @@
 GitHub Flavored Markdown · Mermaid diagrams · KaTeX math · Shiki highlighting · live preview ·
 native file associations on Windows, Linux and macOS
 
+[![Build](https://github.com/Ydjin1984/davinci-markdown-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/Ydjin1984/davinci-markdown-editor/actions/workflows/ci.yml)
 [![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![Rust](https://img.shields.io/badge/Rust-1.82+-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-119%20frontend%20%C2%B7%2069%20Rust-success)](#testing)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
@@ -87,13 +89,63 @@ xdg-mime default "DaVinci Markdown Editor.desktop" text/markdown
 > The desktop file keeps the name the bundler derives from the product name, which contains spaces
 > — hence the quotes. The graphical route (_Properties → Open With → Set as default_) does not need
 > it.
+>
+> To remove the package later, use the name from the control file rather than the file name of the
+> download: `sudo apt remove da-vinci-markdown-editor` (Debian family) or
+> `sudo dnf remove da-vinci-markdown-editor` (Fedora family). The `.desktop` entry ships with
+> `Exec=davinci-markdown %F`, so double-clicking a Markdown file opens it in the running window, and
+> with `MimeType=text/markdown` the entry appears in _Open With_ as soon as the package is
+> installed — no session restart needed.
+>
+> The AppImage cannot register file associations, because it installs nothing. It is the right
+> choice for trying the editor; use a package if you want `.md` to open in it.
 
-### macOS
+### macOS 10.15 Catalina or newer
 
-Not built yet. The bundle configuration is complete (`bundle.macOS` in `src-tauri/tauri.conf.json`)
-and the entitlements WebKit needs under the hardened runtime are in
-[`src-tauri/macos/entitlements.plist`](src-tauri/macos/entitlements.plist), but producing and
-signing a `.dmg` needs a macOS machine with Xcode. That is what the workflow's macOS job is for.
+| Machine                                     | File                  |
+| ------------------------------------------- | --------------------- |
+| Apple Silicon (M1/M2/M3/M4)                 | `…_aarch64.dmg`       |
+| Intel                                       | `…_x64.dmg`           |
+
+Open the `.dmg`, drag **DaVinci Markdown Editor** onto the _Applications_ shortcut, then launch it
+from _Applications_ — or, from a terminal, mount and copy it in one go:
+
+```bash
+VERSION=0.2.2
+hdiutil attach ~/Downloads/DaVinci.Markdown.Editor_${VERSION}_aarch64.dmg
+cp -R "/Volumes/DaVinci Markdown Editor/DaVinci Markdown Editor.app" /Applications/
+hdiutil detach "/Volumes/DaVinci Markdown Editor"
+xattr -dr com.apple.quarantine "/Applications/DaVinci Markdown Editor.app"
+```
+
+> **Gatekeeper.** The disk image is not code-signed, so a plain double-click on first launch ends in
+> _"Apple could not verify … is free of malware"_ and the app will not start. Allow it once with
+> **right-click the app → Open → Open**; every later launch is a normal double-click. The `xattr`
+> line above clears the quarantine flag from the terminal instead, and the `cp -R` route skips
+> Finder's drag-and-drop entirely. Nothing is notarised, so expect this on every machine the app is
+> copied to.
+>
+> **File associations.** The bundle declares `md`, `markdown`, `mdown`, `mkdn` and `mkd` in
+> `CFBundleDocumentTypes` with the `Editor` role and `LSHandlerRank: Default`, so macOS lists it in
+> _Open With_ as soon as the app is in `/Applications`. To make it the system-wide default:
+> right-click any Markdown file → _Get Info_ → _Open with_ → _DaVinci Markdown Editor_ →
+> _Change All…_. macOS also honours `open -a "DaVinci Markdown Editor" notes.md`, and the
+> command-line entry point works without any association at all:
+>
+> ```bash
+> "/Applications/DaVinci Markdown Editor.app/Contents/MacOS/davinci-markdown" notes.md
+> ```
+>
+> **What is inside.** `CFBundleIdentifier` is `io.davinci.markdown`, the executable is
+> `Contents/MacOS/davinci-markdown` and the remaining configuration is `Contents/Resources/icon.icns`
+> — the application icon, carrying the full 16–1024 px set. The bundle declares
+> `LSMinimumSystemVersion` 10.15 and `NSHighResolutionCapable`. Both architectures are built by the
+> `macOS` job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `macos-14` for the
+> `aarch64` image, `macos-13` for `x64` — and
+> [`src-tauri/macos/entitlements.plist`](src-tauri/macos/entitlements.plist) holds the three WebKit
+> entitlements (JIT, unsigned executable memory, library validation) that apply once the build is
+> signed with a Developer ID certificate; with no certificate configured the app ships unsigned and
+> the hardened runtime is not applied.
 
 ---
 
@@ -321,7 +373,7 @@ Cargo requires integration tests under `src-tauri/tests/`, so the repository has
 ### Manual checks before a release
 
 Not automatable in CI. The full matrix — clean installs, file associations, double-click, Unicode
-paths, single-instance hand-off, upgrade and uninstall on both platforms — is in
+paths, single-instance hand-off, upgrade and uninstall across Windows, Linux and macOS — is in
 [`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md).
 
 ---
@@ -366,10 +418,10 @@ and `mailto`, and never the local machine or a private network.
 through a strict schema, and the Content Security Policy forbids inline script. There is a test for
 each of those.
 
-**How large is it?** The Windows installer is under 6 MB and the Linux package about 7 MB. A running
-window settles around 24–25 MB of resident memory, and reaches a usable window in about 110 ms on
-the machine this was measured on. Your hardware will differ; the figures come from the release
-build, not from a development one.
+**How large is it?** The Windows installer is under 6 MB, the Linux package about 7 MB and the macOS
+disk image about 11 MB. A running window settles around 24–25 MB of resident memory, and reaches a
+usable window in about 110 ms on the machine this was measured on. Your hardware will differ; the
+figures come from the release build, not from a development one.
 
 **Why is the AppImage so much bigger?** It bundles the WebKitGTK stack so it runs on any
 distribution without installing dependencies. The `.deb` and `.rpm` use the system one.
@@ -379,8 +431,9 @@ large files are worth benchmarking on your own hardware rather than trusting a n
 else's machine.
 
 **Where are my settings?** `%APPDATA%\io.davinci.markdown\` on Windows,
-`~/.config/io.davinci.markdown/` on Linux. `settings.json` and `session.json`, both written
-atomically; a file that cannot be parsed is preserved rather than overwritten.
+`~/.config/io.davinci.markdown/` on Linux, `~/Library/Application Support/io.davinci.markdown/` on
+macOS. `settings.json` and `session.json`, both written atomically; a file that cannot be parsed is
+preserved rather than overwritten.
 
 ---
 

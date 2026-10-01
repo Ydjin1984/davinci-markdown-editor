@@ -44,7 +44,7 @@
     "publisher": "DaVinci Cyber Engineering",
     "homepage": "https://www.davinci-cyber-engineering.uz/",
     "shortDescription": "Markdown editor with GitHub Flavored Markdown, Mermaid diagrams and live preview",
-    "longDescription": "DaVinci Markdown Editor is a fast, natively integrated Markdown editor for Windows and Linux. It renders GitHub Flavored Markdown, Mermaid diagrams, syntax-highlighted code blocks and KaTeX math with a live preview, and registers itself as a handler for .md and .markdown files.\n\nDaVinci Cyber Engineering\nSecure - Analyze - Engineer - Build\n\nWeb: https://www.davinci-cyber-engineering.uz/\nEmail: info@davinci-cyber-engineering.uz\nSupport the project (USDT TRC20): TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41",
+    "longDescription": "DaVinci Markdown Editor is a fast, natively integrated Markdown editor for Windows, Linux and macOS. It renders GitHub Flavored Markdown, Mermaid diagrams, syntax-highlighted code blocks and KaTeX math with a live preview, exports to PDF and self-contained HTML, and registers itself as a handler for .md, .markdown, .mdown, .mkdn and .mkd files.\n\nDaVinci Cyber Engineering\nSecure - Analyze - Engineer - Build\n\nWeb: https://www.davinci-cyber-engineering.uz/\nEmail: info@davinci-cyber-engineering.uz\nSupport the project (USDT TRC20): TAnJB15jGXVtfKkwgs2pz5NFN5fN22ha41",
     "copyright": "Copyright (C) 2026 DaVinci Cyber Engineering",
     "licenseFile": "../LICENSE",
     "resources": [],
