@@ -600,6 +600,58 @@ pub struct AssetProbe {
     pub inlineable: bool,
 }
 
+/// Read an asset and return it as a `data:` URL.
+///
+/// Used by the HTML export to embed images, which is what makes the exported
+/// file self-contained. The path goes through the same allow-list as the
+/// preview itself, so the export cannot reach anything the preview could not.
+#[tauri::command]
+pub fn read_asset_data_url(state: State<'_, AppState>, path: String) -> Result<String> {
+    use base64::Engine as _;
+
+    let resolved = paths::resolve(None, &path)?;
+    let canonical = state.assets.resolve(&resolved).ok_or_else(|| {
+        AppError::new(
+            ErrorCode::PermissionDenied,
+            "That file is outside the folders the preview may read.",
+        )
+        .with_path(&resolved)
+    })?;
+
+    let meta = std::fs::metadata(&canonical).map_err(|e| AppError::from_io(&e, &canonical))?;
+    if meta.len() > filesystem::MAX_TEXT_BYTES {
+        return Err(
+            AppError::new(ErrorCode::TooLarge, "The file is too large to embed.")
+                .with_path(&canonical),
+        );
+    }
+
+    let bytes = std::fs::read(&canonical).map_err(|e| AppError::from_io(&e, &canonical))?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!(
+        "data:{};base64,{}",
+        paths::mime_for_path(&canonical),
+        encoded
+    ))
+}
+
+/// Open the operating system's print dialog for the main window.
+///
+/// Windows shows the WebView2 print preview and Linux the GTK print dialog;
+/// both offer "save as PDF", and both use the same engine that drew the
+/// preview, so the output matches what the user is looking at. The frontend
+/// switches to the print layout before calling this.
+#[tauri::command]
+pub fn print_document(app: AppHandle) -> Result<()> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| AppError::internal("The application window is not available."))?;
+
+    window.print().map_err(|err| {
+        AppError::internal("The print dialog could not be opened.").with_detail(err.to_string())
+    })
+}
+
 /// Explain why an image in the preview failed to load.
 ///
 /// A broken-image icon tells the user nothing. This distinguishes the three

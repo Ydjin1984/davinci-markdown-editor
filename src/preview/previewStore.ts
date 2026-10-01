@@ -15,8 +15,11 @@ interface PreviewState {
   documentId: string | null;
   /** True while a render for newer input is in flight. */
   pending: boolean;
+  /** True while the diagrams in the current output are still being drawn. */
+  diagramsPending: boolean;
   setRendered: (documentId: string, html: string, outline: OutlineItem[]) => void;
   setPending: (pending: boolean) => void;
+  setDiagramsPending: (pending: boolean) => void;
   clear: () => void;
 }
 
@@ -25,8 +28,10 @@ export const usePreviewStore = create<PreviewState>((set) => ({
   outline: [],
   documentId: null,
   pending: false,
+  diagramsPending: false,
 
   setRendered: (documentId, html, outline) => set({ documentId, html, outline, pending: false }),
   setPending: (pending) => set({ pending }),
-  clear: () => set({ html: "", outline: [], documentId: null, pending: false }),
+  setDiagramsPending: (diagramsPending) => set({ diagramsPending }),
+  clear: () => set({ html: "", outline: [], documentId: null, pending: false, diagramsPending: false }),
 }));

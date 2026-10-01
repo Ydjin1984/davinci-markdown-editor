@@ -61,5 +61,8 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     environment: "node",
+    // `?raw` CSS imports have to keep their content: the HTML export embeds the
+    // real stylesheets, and stubbing them would make the export tests vacuous.
+    css: true,
   },
 });

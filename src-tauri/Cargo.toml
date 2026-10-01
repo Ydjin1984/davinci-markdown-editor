@@ -1,6 +1,6 @@
 [package]
 name = "davinci-markdown-editor"
-version = "0.1.2"
+version = "0.2.0"
 description = "Natively integrated Markdown editor with GitHub Flavored Markdown, Mermaid diagrams and live preview"
 authors = ["DaVinci Cyber Engineering <info@davinci-cyber-engineering.uz>"]
 edition = "2021"
@@ -24,6 +24,7 @@ tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = "2"
+base64 = "0.22"
 notify = "8"
 walkdir = "2"
 # Deleting through the OS trash keeps the "no data loss" promise cheap to honour.
@@ -43,6 +44,11 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Console",
     "Win32_Storage_FileSystem",
 ] }
+# Used to switch off WebView2's own accelerator keys; see the platform module.
+webview2-com = "0.39"
+# Provides the `Interface` trait that `cast` between WebView2 settings versions
+# requires. Must match the version webview2-com was generated against.
+windows-core = "0.62"
 
 [features]
 # Enables the Tauri devtools in release builds when explicitly requested.

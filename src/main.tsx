@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import "katex/dist/katex.min.css";
 import "./styles/global.css";
 import "./styles/markdown.css";
+// Last so its rules win over the screen styles at equal specificity.
+import "./styles/print.css";
 
 import { App } from "./App";
 import { ErrorBoundary } from "./app/ErrorBoundary";

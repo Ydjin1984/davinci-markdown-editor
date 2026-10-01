@@ -59,11 +59,14 @@ export function useMarkdownRender({ documentId, content, render, enabled }: UseM
 
     if (timer.current !== undefined) clearTimeout(timer.current);
 
+    // Mark the preview stale the moment a render is needed. Waiting until the
+    // debounce fires would leave a window in which the output looks current
+    // while it still reflects the previous settings — long enough for the
+    // print flow to capture the wrong theme.
+    if (content.length > 0) usePreviewStore.getState().setPending(true);
+
     const run = async () => {
       const current = (generation.current += 1);
-      // An empty document renders instantly; no need to wait for the debounce
-      // to show an empty preview.
-      if (content.length > 0) usePreviewStore.getState().setPending(true);
 
       const result = await renderMarkdown(content, renderRef.current);
       if (current !== generation.current) return; // superseded by newer input

@@ -74,6 +74,12 @@ const STRINGS = {
   "tools.settings": { en: "Settings", ru: "Настройки" },
   "tools.copyHtml": { en: "Copy Rendered HTML", ru: "Копировать HTML" },
   "tools.exportHtml": { en: "Export as HTML…", ru: "Экспорт в HTML…" },
+  "tools.exportPdf": { en: "Export as PDF…", ru: "Экспорт в PDF…" },
+  "tools.exportPdfHint": {
+    en: "Opens the system print dialog — choose “Save as PDF” there.",
+    ru: "Откроется системный диалог печати — выберите в нём «Сохранить как PDF».",
+  },
+  "tools.exportGroup": { en: "Export", ru: "Экспорт" },
   "tools.revealInExplorer": { en: "Reveal in File Manager", ru: "Показать в проводнике" },
   "tools.wordCount": { en: "Word Count", ru: "Статистика" },
   "tools.assetRoots": { en: "Preview Asset Access…", ru: "Доступ просмотра к файлам…" },

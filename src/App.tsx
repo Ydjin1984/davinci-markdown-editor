@@ -93,10 +93,14 @@ export function App() {
   );
 
   const appearance = useUiStore((state) => state.appearance);
+  const printing = useUiStore((state) => state.printing);
+
   useMarkdownRender({
     documentId: activeId,
     content: activeDocument?.content ?? "",
-    render: { ...renderOptions, appearance },
+    // Printing always renders with the light theme: a dark preview would put
+    // near-white text on white paper as soon as background graphics are off.
+    render: { ...renderOptions, appearance: printing ? "light" : appearance },
     enabled: ready && activeId !== null,
   });
 
@@ -408,6 +412,18 @@ export function App() {
             });
           });
           break;
+        case "p":
+          // The conventional shortcut for "make a document out of this".
+          consume(() => {
+            void import("@/preview/exportActions").then((module) => module.printDocument());
+          });
+          break;
+        case "e":
+          if (!event.shiftKey) return;
+          consume(() => {
+            void import("@/preview/exportActions").then((module) => module.exportHtml());
+          });
+          break;
         default:
           break;
       }
@@ -447,8 +463,9 @@ export function App() {
     [isHorizontalSplit, patch],
   );
 
-  const showEditor = layout !== "preview";
-  const showPreview = layout !== "editor";
+  const showEditor = layout !== "preview" && !printing;
+  // Printing reads the preview, so it has to be mounted even in editor-only mode.
+  const showPreview = layout !== "editor" || printing;
 
   return (
     <div className="app-shell" data-layout={layout}>

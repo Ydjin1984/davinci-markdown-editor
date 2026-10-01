@@ -29,6 +29,26 @@ import * as ipc from "@/shared/ipc";
 import { t } from "@/shared/i18n";
 import { basename, cx, isMarkdownPath, resolveLinkTarget, stem } from "@/shared/util";
 
+/**
+ * Hydrate the diagrams and publish whether any are still being drawn.
+ *
+ * The print flow waits on that flag: printing a half-drawn diagram produces a
+ * blank box in the PDF.
+ */
+function reportHydration(
+  container: HTMLElement,
+  options: Parameters<typeof hydrateDiagrams>[1],
+  controller: AbortController,
+  refreshAnchors: () => void,
+): void {
+  const result = hydrateDiagrams(container, options, controller.signal, () => {
+    refreshAnchors();
+    usePreviewStore.getState().setDiagramsPending(false);
+  });
+  usePreviewStore.getState().setDiagramsPending(result.pending > 0);
+  refreshAnchors();
+}
+
 export function PreviewPane() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const anchorsRef = useRef<Anchor[]>([]);
@@ -43,7 +63,10 @@ export function PreviewPane() {
     return active ?? null;
   });
   const preview = useSettingsStore((state) => state.settings.preview);
-  const appearance = useUiStore((state) => state.appearance);
+  // The palette has to follow the same decision the Markdown pipeline was
+  // given. Printing renders with the light theme, so reading the stored
+  // appearance here would leave the page dark around light-highlighted code.
+  const appearance = useUiStore((state) => (state.printing ? "light" : state.appearance));
 
   // Derived, not mirrored into state: a document removed on disk gets a banner.
   const warning =
@@ -123,8 +146,7 @@ export function PreviewPane() {
     container.innerHTML = html;
     container.scrollTop = previousScroll;
 
-    hydrateDiagrams(container, diagramOptions, controller.signal, refreshAnchors);
-    refreshAnchors();
+    reportHydration(container, diagramOptions, controller, refreshAnchors);
   }, [html, diagramOptions, refreshAnchors]);
 
   // Re-hydrate when the colour scheme changes, even if the HTML is identical.
@@ -134,7 +156,7 @@ export function PreviewPane() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    hydrateDiagrams(container, diagramOptions, controller.signal, refreshAnchors);
+    reportHydration(container, diagramOptions, controller, refreshAnchors);
   }, [diagramOptions, refreshAnchors]);
 
   useEffect(

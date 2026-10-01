@@ -102,6 +102,8 @@ raised — a second process is never started, and no file argument is dropped du
 | Heading 1–4 / clear | `Ctrl+Shift+1…4` / `Ctrl+Shift+0` | `⌘+Shift+1…4` / `⌘+Shift+0` |
 | Bullet / ordered / task list | `Ctrl+Shift+8` / `Ctrl+Shift+7` / `Ctrl+Shift+9` | same with `⌘` |
 | Toggle preview | `Ctrl+Shift+V` | `⌘+Shift+V` |
+| Export as PDF | `Ctrl+P` | `⌘+P` |
+| Export as HTML | `Ctrl+Shift+E` | `⌘+Shift+E` |
 | Settings | `Ctrl+,` | `⌘+,` |
 
 ---

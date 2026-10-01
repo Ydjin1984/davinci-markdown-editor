@@ -37,6 +37,8 @@ const SHORTCUTS: Array<[string, string]> = [
   [t("shortcut.undo"), `${mod}+Z`],
   [t("shortcut.redo"), `${mod}+Shift+Z`],
   [t("shortcut.closeTab"), `${mod}+W`],
+  [t("tools.exportPdf"), `${mod}+P`],
+  [t("tools.exportHtml"), `${mod}+Shift+E`],
   [t("view.togglePreview"), `${mod}+Shift+V`],
   [t("shortcut.settings"), `${mod}+,`],
 ];

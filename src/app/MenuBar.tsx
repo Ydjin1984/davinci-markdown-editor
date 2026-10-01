@@ -31,7 +31,7 @@ import {
   toggleHorizontalRule,
 } from "@/editor/codemirror/commands";
 import { DIAGRAM_TEMPLATES, fencedDiagram } from "@/mermaid/templates";
-import { buildExportHtml, exportFileName } from "@/preview/exportHtml";
+import { copyHtml, exportHtml, printDocument } from "@/preview/exportActions";
 import { copyText } from "@/shared/clipboard";
 import type { LayoutMode } from "@/shared/types";
 
@@ -133,37 +133,8 @@ export function MenuBar() {
 
   const setLayout = (layout: LayoutMode) => patch("view", { layout });
 
-  const exportHtml = async () => {
-    if (!activeDocument) return;
-    const documentDir = activeDocument.path?.replace(/[\\/][^\\/]*$/, "") ?? null;
-    const html = buildExportHtml({
-      title: activeDocument.title,
-      documentDir,
-      appearance: useUiStore.getState().appearance,
-    });
-    const path = await ipc.pickSavePath(exportFileName(activeDocument.title, "html"), "html", null);
-    if (!path) return;
-    try {
-      await ipc.writeExportFile(path, html);
-      useUiStore.getState().notify(t("toast.exported", { name: basename(path) }), "success");
-    } catch (error) {
-      await ipc.confirmDialog(t("error.genericTitle"), String(error), { kind: "error" });
-    }
-  };
-
-  const copyHtml = async () => {
-    if (!activeDocument) return;
-    const documentDir = activeDocument.path?.replace(/[\\/][^\\/]*$/, "") ?? null;
-    const html = buildExportHtml({
-      title: activeDocument.title,
-      documentDir,
-      appearance: useUiStore.getState().appearance,
-    });
-    const copied = await copyText(html);
-    useUiStore
-      .getState()
-      .notify(copied ? t("toast.copied") : t("toast.copyFailed"), copied ? "success" : "error");
-  };
+  // Export lives in `@/preview/exportActions` so the ordering that matters —
+  // re-render, wait for the diagrams, then print — is in one place.
 
   const menus = useMemo<Record<string, MenuEntry[]>>(() => {
     const documents = useDocumentsStore.getState().documents;
@@ -386,8 +357,16 @@ export function MenuBar() {
           },
         },
         { separator: true },
-        { label: t("tools.copyHtml"), disabled: !activeDocument, run: run(copyHtml) },
-        { label: t("tools.exportHtml"), disabled: !activeDocument, run: run(exportHtml) },
+        {
+          label: t("tools.exportGroup"),
+          disabled: !activeDocument,
+          items: [
+            { label: t("tools.exportPdf"), shortcut: `${mod}+P`, run: run(printDocument) },
+            { label: t("tools.exportHtml"), shortcut: `${mod}+Shift+E`, run: run(exportHtml) },
+            { separator: true },
+            { label: t("tools.copyHtml"), run: run(copyHtml) },
+          ],
+        },
         { separator: true },
         {
           label: t("tools.revealInExplorer"),
@@ -444,8 +423,19 @@ export function MenuBar() {
           <button
             type="button"
             className={cx("menubar-button", openMenu === title && "is-open")}
+            aria-haspopup="menu"
+            aria-expanded={openMenu === title}
             onPointerDown={(event) => {
               event.stopPropagation();
+              cancelPendingClose();
+              setOpenMenu(openMenu === title ? null : title);
+              setOpenSubmenu(null);
+            }}
+            onClick={(event) => {
+              // A keyboard activation reports no click count; the pointer path
+              // already handled mouse input on pointerdown, and acting on both
+              // would toggle the menu twice.
+              if (event.detail !== 0) return;
               cancelPendingClose();
               setOpenMenu(openMenu === title ? null : title);
               setOpenSubmenu(null);
@@ -514,6 +504,13 @@ function MenuRow({ entry, openSubmenu, nested, onHoverRow, onKeepOpen, onClose }
           if (nested) {
             // Entering a row inside the open submenu must never schedule a
             // close, whichever order the browser delivers the enter events in.
+            onKeepOpen();
+            return;
+          }
+          onHoverRow(hasSubmenu ? (entry.label ?? null) : null);
+        }}
+        onFocus={() => {
+          if (nested) {
             onKeepOpen();
             return;
           }

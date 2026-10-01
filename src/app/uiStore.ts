@@ -18,10 +18,19 @@ export type NotificationListener = (toast: Toast) => void;
 interface UiState {
   /** Resolved appearance after applying the `system` preference. */
   appearance: "light" | "dark";
+  /**
+   * True while a print or PDF export is being prepared.
+   *
+   * The preview is re-rendered with the light theme for the duration, because
+   * `window.print()` on a dark preview would put near-white text on white
+   * paper the moment background graphics are switched off.
+   */
+  printing: boolean;
   dialog: DialogKind | null;
   toasts: Toast[];
 
   setAppearance: (appearance: "light" | "dark") => void;
+  setPrinting: (printing: boolean) => void;
   openDialog: (dialog: DialogKind) => void;
   closeDialog: () => void;
   notify: (message: string, tone?: Toast["tone"], action?: Toast["action"]) => void;
@@ -30,10 +39,12 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set) => ({
   appearance: "light",
+  printing: false,
   dialog: null,
   toasts: [],
 
   setAppearance: (appearance) => set({ appearance }),
+  setPrinting: (printing) => set({ printing }),
 
   openDialog: (dialog) => set({ dialog }),
   closeDialog: () => set({ dialog: null }),

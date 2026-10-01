@@ -160,6 +160,12 @@ export const revealInFileManager = (path: string) => call<void>("reveal_in_file_
 
 export const openExternalUrl = (url: string) => call<void>("open_external_url", { url });
 
+/** Read an asset as a `data:` URL, for the self-contained HTML export. */
+export const readAssetDataUrl = (path: string) => call<string>("read_asset_data_url", { path });
+
+/** Open the operating system's print dialog for the main window. */
+export const printDocument = () => call<void>("print_document");
+
 // ---------------------------------------------------------------------------
 // Dialogs
 // ---------------------------------------------------------------------------

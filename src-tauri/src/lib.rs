@@ -7,6 +7,7 @@ pub mod error;
 pub mod filesystem;
 pub mod links;
 pub mod paths;
+pub mod platform;
 pub mod settings;
 pub mod state;
 pub mod watcher;
@@ -156,6 +157,12 @@ pub fn run() {
             app_state.queue_launch(launch);
             app.manage(app_state);
 
+            // The window has to exist before its webview settings can be
+            // adjusted, and the frontend must not run before that happens.
+            if let Some(window) = handle.get_webview_window("main") {
+                platform::disable_browser_accelerator_keys(&window);
+            }
+
             // Safety net: if the frontend never reports readiness, still show a
             // window rather than leaving the user with a silent process.
             let fallback_handle = handle.clone();
@@ -209,6 +216,8 @@ pub fn run() {
             commands::app_info,
             commands::asset_access,
             commands::probe_asset,
+            commands::read_asset_data_url,
+            commands::print_document,
             commands::markdown_extensions,
         ])
         .run(tauri::generate_context!())
