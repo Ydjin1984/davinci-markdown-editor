@@ -162,7 +162,7 @@ pub fn install_macos_quit_menu(app: &tauri::App) -> tauri::Result<()> {
 
     app.on_menu_event(|app, event| {
         if event.id().0 == "app-quit" {
-            let _ = app.emit("quit-requested", ());
+            let _ = app.emit(crate::QUIT_REQUESTED_EVENT, ());
         }
     });
 

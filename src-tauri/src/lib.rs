@@ -21,6 +21,10 @@ use tauri::Manager;
 /// Emitted to the frontend when a second launch hands files to this instance.
 pub const OPEN_PATHS_EVENT: &str = "app://open-paths";
 
+/// Emitted to the frontend when the macOS application menu's Quit item is
+/// chosen, so unsaved work gets the same prompt as closing the window.
+pub const QUIT_REQUESTED_EVENT: &str = "app://quit-requested";
+
 /// Grace period before the window is forced visible even if the UI never
 /// reports readiness. Prevents a webview failure from looking like "nothing
 /// happened" when the user double-clicks a document.
