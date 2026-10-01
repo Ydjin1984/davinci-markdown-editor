@@ -3,7 +3,7 @@
 Everything here is either impossible to automate or deliberately not automated. Work through it
 on **clean machines**, not on a development box (spec §37.8).
 
-Version: `______`  Release date: `______`  Release manager: `______`
+Version: `______` Release date: `______` Release manager: `______`
 
 ---
 
@@ -29,15 +29,15 @@ Use a VM or a machine that has never had the application installed.
 
 - [ ] Installer runs without a SmartScreen block beyond the expected "unknown publisher" prompt
 - [ ] Start Menu entry appears and launches the application
-- [ ] An entry appears in *Apps & features* / *Programs and Features*
+- [ ] An entry appears in _Apps & features_ / _Programs and Features_
 - [ ] The application icon is correct in the Start Menu, the taskbar and the window
 
 **File association**
 
-- [ ] `.md` appears in the right-click *Open with* list
-- [ ] `.markdown` appears in the right-click *Open with* list
+- [ ] `.md` appears in the right-click _Open with_ list
+- [ ] `.markdown` appears in the right-click _Open with_ list
 - [ ] The registered icon for `.md` is the application icon
-- [ ] *Choose another app* → *Always use this app* works
+- [ ] _Choose another app_ → _Always use this app_ works
 - [ ] Double-clicking a `.md` file opens it in a tab
 - [ ] Double-clicking a `.markdown` file opens it in a tab
 
@@ -50,7 +50,7 @@ Use a VM or a machine that has never had the application installed.
 
 **Multiple arguments**
 
-- [ ] Selecting several `.md` files → *Open with* → all open as tabs
+- [ ] Selecting several `.md` files → _Open with_ → all open as tabs
 - [ ] `davinci-markdown.exe a.md b.md` from `cmd` opens both
 
 **Single instance**
@@ -68,7 +68,7 @@ Use a VM or a machine that has never had the application installed.
 
 **Uninstall and upgrade**
 
-- [ ] Uninstalling removes the Start Menu entry and the *Apps & features* entry
+- [ ] Uninstalling removes the Start Menu entry and the _Apps & features_ entry
 - [ ] Uninstalling leaves no orphaned ProgId registration in the registry
 - [ ] Installing over an older version keeps `%APPDATA%\io.davinci.markdown\settings.json`
 
@@ -92,8 +92,8 @@ Test at minimum on Ubuntu/Debian (GNOME) and one of Kali, Fedora or Arch.
 - [ ] `/usr/share/mime/packages/io.davinci.markdown.mime.xml` exists
 - [ ] `xdg-mime query default text/markdown` returns the desktop file after assignment
 - [ ] `gio info file.md` reports `text/markdown`
-- [ ] The `.md` entry appears in *Open With* in the file manager
-- [ ] *Properties → Open With → Set as default* works
+- [ ] The `.md` entry appears in _Open With_ in the file manager
+- [ ] _Properties → Open With → Set as default_ works
 
 **File managers**
 
@@ -124,6 +124,54 @@ Test at minimum on Ubuntu/Debian (GNOME) and one of Kali, Fedora or Arch.
 - [ ] `update-mime-database` and `update-desktop-database` are triggered by the package scripts
 - [ ] Upgrading keeps `~/.config/io.davinci.markdown/settings.json`
 
+**AppImage**
+
+- [ ] Runs from a directory with no write permission (it mounts itself read-only)
+- [ ] Double-clicking a `.md` opens it, which means the desktop entry's `%F` reached the app
+- [ ] `--appimage-extract` shows a `usr/bin/davinci-markdown` and a desktop entry
+
+---
+
+## 3b. macOS — clean install
+
+Builds are unsigned until a Developer ID certificate exists, so the first run always needs a
+deliberate confirmation. This is the largest source of "it does not work" reports, so check it
+explicitly rather than assuming.
+
+**Install**
+
+- [ ] The `.dmg` opens and shows the application beside an Applications shortcut
+- [ ] Dragging it to Applications installs it
+- [ ] First launch: right-click → _Open_ → _Open_ succeeds
+- [ ] Double-clicking the app on a second attempt works without the prompt
+- [ ] `xattr -d com.apple.quarantine` clears the quarantine flag if a user prefers that route
+- [ ] The application appears in Launchpad with the right icon
+
+**File association**
+
+- [ ] `.md` shows the _Open With → DaVinci Markdown Editor_ entry in Finder
+- [ ] _Get Info → Open with → Change All_ makes it the default
+- [ ] Double-clicking a `.md` opens it in a tab
+- [ ] The icon shown for `.md` files updates after the association is set
+
+**Architecture**
+
+- [ ] The Apple Silicon build runs natively (`Activity Monitor` → _Kind: Apple_)
+- [ ] The Intel build runs under Rosetta on Apple Silicon, and natively on Intel hardware
+
+**Paths and behaviour**
+
+- [ ] A path with spaces opens
+- [ ] A path with Cyrillic characters opens
+- [ ] A file on an external volume opens
+- [ ] With the application running, double-clicking a `.md` adds a tab to the existing window
+- [ ] The window comes to the front
+
+**Uninstall**
+
+- [ ] Dragging the application to the trash removes it
+- [ ] `~/Library/Application Support/io.davinci.markdown/` holds the settings and survives
+
 ---
 
 ## 4. Feature smoke test
@@ -150,8 +198,8 @@ document.
 - [ ] Sequence diagram renders
 - [ ] Class, state, ER, Gantt, Git graph, mindmap, timeline and pie render
 - [ ] Zoom in, zoom out, fit and reset work
-- [ ] *Copy SVG* puts SVG markup on the clipboard
-- [ ] *Export SVG* writes a file that opens correctly in a browser and an image viewer
+- [ ] _Copy SVG_ puts SVG markup on the clipboard
+- [ ] _Export SVG_ writes a file that opens correctly in a browser and an image viewer
 - [ ] A diagram with a syntax error shows an error card **and keeps the source visible**
 - [ ] The rest of the document still renders around a broken diagram
 - [ ] A broken diagram does not freeze the interface
@@ -169,7 +217,7 @@ document.
 **Files**
 
 - [ ] `Ctrl+S` saves; the dirty indicator clears
-- [ ] The status bar switches between *Saved* and *Modified* correctly
+- [ ] The status bar switches between _Saved_ and _Modified_ correctly
 - [ ] A CRLF file keeps CRLF after editing and saving
 - [ ] A UTF-8 BOM file keeps its BOM
 - [ ] Opening a 1 MB document is comfortable to edit
@@ -178,14 +226,14 @@ document.
 **External changes**
 
 - [ ] Editing the open file in another editor raises the change prompt
-- [ ] *Reload* picks up the external content
-- [ ] *Keep Local Changes* keeps the local text and allows the next save
+- [ ] _Reload_ picks up the external content
+- [ ] _Keep Local Changes_ keeps the local text and allows the next save
 - [ ] `Ctrl+S` in this application does **not** raise the prompt
 - [ ] Deleting the file externally is reported rather than losing the buffer
 
 **Workspace**
 
-- [ ] *Open Folder* populates the explorer
+- [ ] _Open Folder_ populates the explorer
 - [ ] Expanding and collapsing directories works
 - [ ] Creating, renaming and deleting files and folders works
 - [ ] Deleting asks for confirmation and moves the item to the trash
@@ -193,8 +241,8 @@ document.
 
 **Appearance and settings**
 
-- [ ] Light, Dark and System themes all apply to the shell *and* the preview together
-- [ ] Switching the OS theme with *System* selected updates the application
+- [ ] Light, Dark and System themes all apply to the shell _and_ the preview together
+- [ ] Switching the OS theme with _System_ selected updates the application
 - [ ] Editor font size, family, tab size and word wrap apply immediately
 - [ ] Settings survive a restart
 - [ ] `Ctrl+,` opens settings
@@ -213,10 +261,10 @@ document.
 - [ ] A document containing `<script>alert(1)</script>` does not execute anything
 - [ ] A document containing `<img src=x onerror="alert(1)">` does not execute anything
 - [ ] A link with a `javascript:` target does nothing when clicked
-- [ ] With *Render raw HTML* off, `<details>` markup is dropped
+- [ ] With _Render raw HTML_ off, `<details>` markup is dropped
 - [ ] An image reference to `/etc/passwd` (or `C:\Windows\win.ini`) does not render
 - [ ] An image reference to a file outside the open folder does not render
-- [ ] *Tools → Preview Asset Access* lists only the folders actually opened
+- [ ] _Tools → Preview Asset Access_ lists only the folders actually opened
 - [ ] Clicking an `https://` link opens the system browser, not an in-app window
 - [ ] The webview devtools console shows no Content-Security-Policy violations
 
@@ -224,17 +272,22 @@ document.
 
 ## 6. Artefacts
 
-- [ ] Windows `.msi` and `.exe` produced
-- [ ] Linux `.deb` produced (mandatory); `.rpm` and `.AppImage` produced if the environment allows
-- [ ] `SHA256SUMS.txt` generated for every artefact
-- [ ] Release notes written from merged changes since the previous tag
-- [ ] Release published as a **draft** and reviewed before publishing
-- [ ] Checksums published alongside the artefacts
+Produced by the workflow on a version tag; it opens a **draft** release with all of them.
+
+- [ ] Windows `.msi` and `.exe`
+- [ ] Linux `.deb` (mandatory) and `.rpm`
+- [ ] Linux `.AppImage` — large, because it carries its own WebKitGTK stack
+- [ ] macOS `.dmg` for `aarch64` and `x64`
+- [ ] The `.deb` desktop-integration check passed in CI, which is what proves the package
+      actually claims `text/markdown` and passes `%F` through to the binary
+- [ ] One merged `SHA256SUMS.txt` covering every artefact
+- [ ] Release notes written from the merged changes since the previous tag
+- [ ] The draft read through and then published
 
 ## 7. Known limitations to state in the release notes
 
 - [ ] Installers are unsigned; first launch shows a SmartScreen or Gatekeeper prompt
-- [ ] macOS is not part of this release
+- [ ] macOS builds are unsigned, so Gatekeeper requires a right-click → Open on first launch
 - [ ] Drag & drop of images and paste-from-clipboard are not implemented
-- [ ] PDF and PNG export are not implemented
-- [ ] The external-change *Compare* view is not implemented
+- [ ] PDF export produces a file through the system print dialog rather than silently
+- [ ] The external-change _Compare_ view is not implemented
