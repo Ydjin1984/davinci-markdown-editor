@@ -177,6 +177,46 @@ explicitly rather than assuming.
 
 ---
 
+## 3c. Android — install on a device or emulator
+
+The APK is built locally rather than by the workflow, so this section is the only gate it passes
+through. [ANDROID.md](ANDROID.md) has the toolchain and the exact commands.
+
+**Install**
+
+- [ ] `npx tauri android build --apk --target aarch64` (and `--target x86_64` for the emulator)
+      produces an APK
+- [ ] `adb install -r …` succeeds and the launcher icon is the project's, not the template's
+- [ ] The first launch shows the "no document is open" screen rather than a blank window
+- [ ] The application appears in _Settings → Apps_ as **DaVinci Markdown Editor**
+
+**Reading is the default view**
+
+- [ ] _Open File…_ offers the system picker and shows Markdown documents
+- [ ] A document opens **rendered**: headings, tables, task lists, highlighted code, a Mermaid
+      diagram and a KaTeX formula all draw
+- [ ] No source text is on screen and no split view exists — the phone shell has one pane
+- [ ] _☰ → More → Source Text_ switches to the editor, and the entry is checked while it is open
+- [ ] Switching back renders the edit
+
+**Exports**
+
+- [ ] _☰ → Export → Export as PDF…_ opens the system print dialog, which offers _Save as PDF_
+- [ ] The saved PDF carries the print stylesheet: dark text on white, no window chrome
+- [ ] _☰ → Export → Export as HTML…_ writes a single file through the system "create document" flow
+- [ ] That file opens in a browser as a standalone page: styles, images and diagram inline
+- [ ] _Save_ writes back to the same `content://` document and the change survives a restart
+
+**System integration**
+
+- [ ] Tapping a `.md` file in Files offers this editor (intent filter registered)
+- [ ] While the application is running, that tap replaces the open document instead of opening a
+      second instance; unsaved work is asked about first
+- [ ] A document opened yesterday still opens today, without the picker asking again
+      (persistable URI permission)
+
+---
+
 ## 4. Feature smoke test
 
 Open `tests/fixtures/Тестовый документ.md` from the repository — it covers most of this in one
@@ -281,6 +321,8 @@ Produced by the workflow on a version tag; it opens a **draft** release with all
 - [ ] Linux `.deb` (mandatory) and `.rpm`
 - [ ] Linux `.AppImage` — large, because it carries its own WebKitGTK stack
 - [ ] macOS `.dmg` for `aarch64` and `x64`
+- [ ] Android `.apk` — built locally for now, see section 3c above; the workflow does not
+      attach one yet and the release notes must say so
 - [ ] The `.deb` desktop-integration check passed in CI, which is what proves the package
       actually claims `text/markdown` and passes `%F` through to the binary
 - [ ] One merged `SHA256SUMS.txt` covering every artefact

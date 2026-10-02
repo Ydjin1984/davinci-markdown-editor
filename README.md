@@ -147,6 +147,38 @@ xattr -dr com.apple.quarantine "/Applications/DaVinci Markdown Editor.app"
 > signed with a Developer ID certificate; with no certificate configured the app ships unsigned and
 > the hardened runtime is not applied.
 
+### Android 8.0 Oreo or newer
+
+The same editor in a smaller shell. A document opens **rendered** — GFM, Mermaid diagrams, KaTeX
+and highlighted code — because reading is what a phone is for; the source text is a writing tool and
+lives one level down, under _☰ → More → Source Text_. The two exports a phone can use are one tap
+away under _Export_: PDF, through the system print dialog's _Save as PDF_, and a self-contained HTML
+file. What a phone has no room for — explorer, outline, tabs, workspace, status bar, settings
+dialogs — is not built into this shell, and the desktop builds keep all of it.
+
+<p align="center">
+  <img src="docs/screenshots/android-rendered.png" alt="A document on a phone, rendered: title bar, diagram, rendered headings" width="32%" />
+  <img src="docs/screenshots/android-menu.png" alt="The phone menu: Source Text nested under More" width="32%" />
+</p>
+
+A document picked from the file manager arrives as a `content://` URI, is read and written through
+the system's `ContentResolver`, and the permission survives a restart, so _Open File…_ is only
+needed for documents Android has not seen before. The `.md` family is registered with the system, so
+tapping a Markdown document in a file manager offers this editor.
+
+There are no release APKs on the releases page yet — the Android build needs the SDK and the NDK,
+and the local recipe with the emulator checklist is in [docs/ANDROID.md](docs/ANDROID.md):
+
+```bash
+npx tauri android build --apk --target aarch64     # phones and tablets
+npx tauri android build --apk --target x86_64      # emulators
+adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+```
+
+> The APK is stored unsigned unless a `keystore.properties` is present in `src-tauri/gen/android`
+> with the key and its passwords; without it Android installs the debug-signed build only after the
+> usual _Install unknown apps_ permission.
+
 ---
 
 ## Command line
@@ -389,7 +421,8 @@ paths, single-instance hand-off, upgrade and uninstall across Windows, Linux and
 
 ```
 src/                     React + TypeScript front end
-├── app/                 Shell: menu bar, status bar, dialogs, toasts, error boundary
+├── app/                 Shell: menu bar and tabs on the desktop, the phone bar and its
+│                        menu on Android, plus dialogs, toasts and the error boundary
 ├── editor/              CodeMirror 6: setup, themes, Markdown commands, cursor store
 ├── markdown/            Markdown engine — deliberately UI-free
 │   ├── renderer/        unified pipeline and custom rehype plugins
@@ -398,6 +431,7 @@ src/                     React + TypeScript front end
 ├── mermaid/             Lazy renderer with caching and hydration
 ├── preview/             Preview pane, scroll sync, PDF and HTML export
 ├── explorer/  outline/  tabs/  settings/  workspace/
+├── shared/              IPC wrapper, translations, platform detection, small utilities
 └── styles/              Application chrome, Markdown rendering, print layout
 
 src-tauri/src/           Rust back end
@@ -407,10 +441,13 @@ src-tauri/src/           Rust back end
 ├── asset.rs             mdasset:// protocol with an access allow-list
 ├── links.rs             Policy for links handed to the operating system
 ├── workspace.rs         Directory listing and file operations
+├── mobile.rs            Android bridge: content:// documents and printing
 └── settings.rs  state.rs  paths.rs  cli.rs  error.rs  platform.rs
 
+src-tauri/gen/android/   The Android project, kept in the repository: it carries the
+                         Kotlin plugin, the intent filters and the launcher icons
 skills/markdown-diagrams/  Agent skill shipped with the project
-docs/                      Demo document, release checklist, screenshots
+docs/                      Demo document, release checklist, screenshots, Android notes
 ```
 
 ---
