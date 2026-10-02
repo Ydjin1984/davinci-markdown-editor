@@ -7,6 +7,7 @@
 use crate::asset::{AssetAccess, ASSET_SCHEME};
 use crate::error::{AppError, ErrorCode, Result};
 use crate::filesystem::{self, ExternalFileState, TextDocument, WriteOptions};
+use crate::mobile;
 use crate::paths;
 use crate::settings::{Session, Settings};
 use crate::state::{AppState, LaunchPayload};
@@ -15,8 +16,10 @@ use crate::workspace::{self, DirEntryInfo, ListOptions, PathInfo};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
+#[cfg(not(target_os = "android"))]
+use tauri_plugin_dialog::FilePath;
 use tauri_plugin_dialog::{
-    DialogExt, FilePath, MessageDialogButtons, MessageDialogKind, MessageDialogResult,
+    DialogExt, MessageDialogButtons, MessageDialogKind, MessageDialogResult,
 };
 use tauri_plugin_opener::OpenerExt;
 
@@ -46,6 +49,15 @@ pub fn take_launch_payload(state: State<'_, AppState>) -> LaunchPayload {
     state.take_launch()
 }
 
+/// The document Android asked us to open at launch, if there was one.
+///
+/// The desktop equivalent is the command line, whose payload is queued by the
+/// CLI parser instead; both end up as a document the interface opens.
+#[tauri::command]
+pub fn take_launch_uri() -> Result<Option<String>> {
+    Ok(mobile::take_launch_uri()?.map(|picked| picked.uri))
+}
+
 #[tauri::command]
 pub fn notify_frontend_ready(app: AppHandle, state: State<'_, AppState>) {
     state.mark_frontend_ready();
@@ -55,9 +67,14 @@ pub fn notify_frontend_ready(app: AppHandle, state: State<'_, AppState>) {
     }
 }
 
+/// Bring the window to the front.
+///
+/// Restoring a minimised window is a desktop concept; the Android activity has
+/// no such state and comes forward on its own.
 #[tauri::command]
 pub fn show_main_window(app: AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
+        #[cfg(desktop)]
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
@@ -90,6 +107,7 @@ pub fn deliver_launch(app: &AppHandle, request: crate::cli::LaunchRequest) {
     }
 
     if let Some(window) = app.get_webview_window("main") {
+        #[cfg(desktop)]
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
@@ -153,6 +171,14 @@ pub fn read_document(
     state: State<'_, AppState>,
     path: String,
 ) -> Result<TextDocument> {
+    // A document chosen through the Android system picker is a `content://`
+    // URI: it has no path to resolve and nothing for the watcher to follow.
+    if mobile::is_content_uri(&path) {
+        let document = mobile::read_document(&path)?;
+        state.touch_recent_file(&PathBuf::from(&path));
+        return Ok(document);
+    }
+
     let resolved = absolutize(&path)?;
     let document = filesystem::read_text_document(&resolved)?;
 
@@ -171,6 +197,16 @@ pub fn write_document(
     content: String,
     options: WriteOptions,
 ) -> Result<TextDocument> {
+    if mobile::is_content_uri(&path) {
+        let document = mobile::write_document(
+            &path,
+            &content,
+            &options.eol.clone().unwrap_or_else(|| "lf".to_string()),
+        )?;
+        state.touch_recent_file(&PathBuf::from(&path));
+        return Ok(document);
+    }
+
     let resolved = absolutize(&path)?;
     let document = filesystem::write_text_document(&resolved, &content, &options)?;
 
@@ -188,18 +224,38 @@ pub fn write_document(
 /// Write an exported artefact (Mermaid SVG, rendered HTML, ...).
 #[tauri::command]
 pub fn write_export_file(path: String, content: String) -> Result<()> {
+    if mobile::is_content_uri(&path) {
+        return mobile::write_export(&path, &content);
+    }
+
     let resolved = absolutize(&path)?;
     filesystem::write_bytes_atomic(&resolved, content.as_bytes())
 }
 
 #[tauri::command]
 pub fn stat_file(path: String) -> Result<ExternalFileState> {
+    // Android documents are only ever changed by this application, so the
+    // answer the UI needs is "unchanged since the last read or write".
+    if mobile::is_content_uri(&path) {
+        return Ok(ExternalFileState {
+            path,
+            exists: true,
+            size: 0,
+            modified_ms: 0,
+            hash: String::new(),
+        });
+    }
+
     let resolved = absolutize(&path)?;
     Ok(filesystem::stat_external(&resolved))
 }
 
 #[tauri::command]
 pub fn close_document(app: AppHandle, state: State<'_, AppState>, path: String) -> Result<()> {
+    if mobile::is_content_uri(&path) {
+        return Ok(());
+    }
+
     let resolved = absolutize(&path)?;
     state.untrack_document(&resolved);
     state.assets.revoke_file(&resolved);
@@ -399,6 +455,11 @@ pub enum FileFilterKind {
     Any,
 }
 
+/// Name the filters the desktop save dialog offers.
+///
+/// Android's own "create document" flow decides the type from the MIME type it
+/// is started with, so there is no filter list to build there.
+#[cfg(not(target_os = "android"))]
 fn apply_filter<R: tauri::Runtime>(
     builder: tauri_plugin_dialog::FileDialogBuilder<R>,
     kind: FileFilterKind,
@@ -413,34 +474,69 @@ fn apply_filter<R: tauri::Runtime>(
     }
 }
 
+/// Keep the identity a picker returned.
+///
+/// A URL that is not a `file:` URL is a document URI from the Android picker
+/// (`content://…`). It has no path form, but it is exactly what the mobile
+/// bridge needs, so it is passed through instead of being dropped.
+#[cfg(not(target_os = "android"))]
 fn to_strings(paths: Vec<FilePath>) -> Vec<String> {
     paths
         .into_iter()
-        .filter_map(|path| match path {
-            FilePath::Path(path) => Some(path.to_string_lossy().into_owned()),
-            FilePath::Url(url) => url
-                .to_file_path()
-                .ok()
-                .map(|p| p.to_string_lossy().into_owned()),
+        .map(|path| match path {
+            FilePath::Path(path) => path.to_string_lossy().into_owned(),
+            FilePath::Url(url) => match url.to_file_path() {
+                Ok(path) => path.to_string_lossy().into_owned(),
+                Err(_) => url.to_string(),
+            },
         })
         .collect()
 }
 
 #[tauri::command]
 pub async fn pick_open_files(app: AppHandle) -> Result<Vec<String>> {
-    let picked = app
-        .dialog()
-        .file()
-        .add_filter("Markdown", &["md", "markdown", "mdown", "mkd", "txt"])
-        .add_filter("All files", &["*"])
-        .blocking_pick_files();
-    Ok(picked.map(to_strings).unwrap_or_default())
+    // Android has no folder of Markdown documents to browse with a desktop
+    // dialog; the system picker is the only way in, and it hands back URIs.
+    #[cfg(target_os = "android")]
+    {
+        let _ = app;
+        Ok(mobile::pick_document()?
+            .map(|picked| vec![picked.uri])
+            .unwrap_or_default())
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let picked = app
+            .dialog()
+            .file()
+            .add_filter("Markdown", &["md", "markdown", "mdown", "mkd", "txt"])
+            .add_filter("All files", &["*"])
+            .blocking_pick_files();
+        Ok(picked.map(to_strings).unwrap_or_default())
+    }
 }
 
+/// Ask for a folder to open as a workspace.
+///
+/// Android has no folder picker in this dialog API, and no workspace concept
+/// to open one into; the mobile interface offers single documents only.
 #[tauri::command]
 pub async fn pick_open_directory(app: AppHandle) -> Result<Option<String>> {
-    let picked = app.dialog().file().blocking_pick_folder();
-    Ok(picked.and_then(|p| to_strings(vec![p]).into_iter().next()))
+    #[cfg(target_os = "android")]
+    {
+        let _ = app;
+        Err(AppError::new(
+            ErrorCode::Unsupported,
+            "Folders can only be opened on the desktop.",
+        ))
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let picked = app.dialog().file().blocking_pick_folder();
+        Ok(picked.and_then(|p| to_strings(vec![p]).into_iter().next()))
+    }
 }
 
 #[tauri::command]
@@ -450,18 +546,39 @@ pub async fn pick_save_path(
     kind: Option<FileFilterKind>,
     start_dir: Option<String>,
 ) -> Result<Option<String>> {
-    let mut builder = app.dialog().file().set_title("Save As");
-    builder = apply_filter(builder, kind.unwrap_or(FileFilterKind::Markdown));
-
-    if let Some(name) = default_name.as_deref().filter(|n| !n.is_empty()) {
-        builder = builder.set_file_name(name);
+    // On Android the file is created by the system's own "create document"
+    // flow; the URI it returns is what the following write fills in. A
+    // starting directory has no equivalent there.
+    #[cfg(target_os = "android")]
+    {
+        let _ = (app, start_dir);
+        let name = default_name
+            .filter(|name| !name.is_empty())
+            .unwrap_or_else(|| "document.md".to_string());
+        let mime = match kind.unwrap_or(FileFilterKind::Markdown) {
+            FileFilterKind::Markdown => "text/markdown",
+            FileFilterKind::Html => "text/html",
+            FileFilterKind::Svg => "image/svg+xml",
+            FileFilterKind::Any => "application/octet-stream",
+        };
+        Ok(mobile::pick_save_file(&name, mime)?.map(|picked| picked.uri))
     }
-    if let Some(dir) = start_dir.as_deref().filter(|d| !d.is_empty()) {
-        builder = builder.set_directory(dir);
-    }
 
-    let picked = builder.blocking_save_file();
-    Ok(picked.and_then(|p| to_strings(vec![p]).into_iter().next()))
+    #[cfg(not(target_os = "android"))]
+    {
+        let mut builder = app.dialog().file().set_title("Save As");
+        builder = apply_filter(builder, kind.unwrap_or(FileFilterKind::Markdown));
+
+        if let Some(name) = default_name.as_deref().filter(|n| !n.is_empty()) {
+            builder = builder.set_file_name(name);
+        }
+        if let Some(dir) = start_dir.as_deref().filter(|d| !d.is_empty()) {
+            builder = builder.set_directory(dir);
+        }
+
+        let picked = builder.blocking_save_file();
+        Ok(picked.and_then(|p| to_strings(vec![p]).into_iter().next()))
+    }
 }
 
 /// Ask what to do about unsaved work.
@@ -639,17 +756,28 @@ pub fn read_asset_data_url(state: State<'_, AppState>, path: String) -> Result<S
 ///
 /// Windows shows the WebView2 print preview and Linux the GTK print dialog;
 /// both offer "save as PDF", and both use the same engine that drew the
-/// preview, so the output matches what the user is looking at. The frontend
-/// switches to the print layout before calling this.
+/// preview, so the output matches what the user is looking at. Android has no
+/// `window.print()`: the same webview is handed to the platform's
+/// `PrintManager`, whose dialog also offers "Save as PDF". The frontend
+/// switches to the print layout before calling this on every platform.
 #[tauri::command]
 pub fn print_document(app: AppHandle) -> Result<()> {
-    let window = app
-        .get_webview_window("main")
-        .ok_or_else(|| AppError::internal("The application window is not available."))?;
+    #[cfg(target_os = "android")]
+    {
+        let _ = app;
+        mobile::print_page()
+    }
 
-    window.print().map_err(|err| {
-        AppError::internal("The print dialog could not be opened.").with_detail(err.to_string())
-    })
+    #[cfg(not(target_os = "android"))]
+    {
+        let window = app
+            .get_webview_window("main")
+            .ok_or_else(|| AppError::internal("The application window is not available."))?;
+
+        window.print().map_err(|err| {
+            AppError::internal("The print dialog could not be opened.").with_detail(err.to_string())
+        })
+    }
 }
 
 /// Explain why an image in the preview failed to load.

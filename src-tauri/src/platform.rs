@@ -60,8 +60,11 @@ pub fn disable_browser_accelerator_keys<R: tauri::Runtime>(_window: &tauri::Webv
 /// webview, which runs the same save-and-confirm flow as closing the window
 /// and then destroys the window — destroying the last window ends the process.
 ///
-/// The function compiles on every platform (the menu API is portable); it is
-/// installed only on macOS, where the default menu has the problem it fixes.
+/// The function is macOS-only because it is the only platform where the
+/// default menu has the problem it fixes — and because the menu API itself is
+/// desktop-only in Tauri, so there is nothing to compile it against on
+/// Android.
+#[cfg(target_os = "macos")]
 pub fn install_macos_quit_menu(app: &tauri::App) -> tauri::Result<()> {
     use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
     use tauri::Emitter;

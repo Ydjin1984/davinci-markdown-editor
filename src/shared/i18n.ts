@@ -87,6 +87,16 @@ const STRINGS = {
   "help.about": { en: "About", ru: "О программе" },
   "help.keyboard": { en: "Keyboard Shortcuts", ru: "Горячие клавиши" },
 
+  // The Android shell: one document, one menu.
+  "mobile.menu": { en: "Menu", ru: "Меню" },
+  "mobile.more": { en: "More", ru: "Ещё" },
+  "mobile.source": { en: "Source Text", ru: "Исходный текст" },
+  "mobile.emptyTitle": { en: "No document is open", ru: "Документ не открыт" },
+  "mobile.emptyHint": {
+    en: "Open a Markdown file to read it rendered.",
+    ru: "Откройте markdown-файл, чтобы увидеть его отрендеренным.",
+  },
+
   "tab.close": { en: "Close Tab", ru: "Закрыть вкладку" },
   "tab.closeOthers": { en: "Close Other Tabs", ru: "Закрыть другие" },
   "tab.closeAll": { en: "Close All Tabs", ru: "Закрыть все" },

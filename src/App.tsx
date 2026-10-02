@@ -6,6 +6,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { MenuBar } from "@/app/MenuBar";
+import { MobileEmptyState, MobileMenu } from "@/app/MobileMenu";
+import { openOnMobile } from "@/app/mobileDocuments";
 import { StatusBar } from "@/app/StatusBar";
 import { Toasts } from "@/app/Toasts";
 import { AboutDialog, AssetAccessDialog, ShortcutsDialog } from "@/app/Dialogs";
@@ -24,6 +26,7 @@ import { dirtyDocuments, useDocumentsStore } from "@/tabs/documentsStore";
 import { useWorkspaceStore } from "@/workspace/workspaceStore";
 import * as ipc from "@/shared/ipc";
 import { t } from "@/shared/i18n";
+import { isMobile } from "@/shared/platform";
 import { clamp, cx, debounce } from "@/shared/util";
 import type { LayoutMode, Session } from "@/shared/types";
 
@@ -31,6 +34,14 @@ import type { LayoutMode, Session } from "@/shared/types";
 const SESSION_SAVE_MS = 800;
 
 export function App() {
+  /**
+   * The Android shell shows the rendered document and nothing else. Reading is
+   * what this build is for; the source text is reachable from the menu, and
+   * that choice is deliberately not persisted — a phone is opened to read.
+   */
+  const mobile = isMobile;
+  const [mobileSource, setMobileSource] = useState(false);
+
   const settings = useSettingsStore((state) => state.settings);
   const loadSettings = useSettingsStore((state) => state.load);
   const patch = useSettingsStore((state) => state.patch);
@@ -132,13 +143,27 @@ export function App() {
         const payload = await ipc.takeLaunchPayload();
         const session = settings.files.restoreSession ? await ipc.getSession() : null;
 
-        if (payload.workspace) {
-          await openWorkspaceRoot(payload.workspace);
-        } else if (session?.workspaceRoot) {
-          await openWorkspaceRoot(session.workspaceRoot);
+        // A workspace is a desktop idea: the Android build opens one document
+        // through the system picker and has no folder of its own.
+        if (!mobile) {
+          if (payload.workspace) {
+            await openWorkspaceRoot(payload.workspace);
+          } else if (session?.workspaceRoot) {
+            await openWorkspaceRoot(session.workspaceRoot);
+          }
         }
 
-        if (payload.files.length > 0) {
+        if (mobile) {
+          // The document Android launched us with wins; otherwise the previous
+          // session is reopened. With neither, the shell shows the "open a
+          // file" screen rather than an empty untitled document.
+          const launched = await ipc.takeLaunchUri();
+          if (launched) {
+            await openOnMobile(launched);
+          } else if (session && session.documents.length > 0) {
+            await restoreSessionDocuments(session);
+          }
+        } else if (payload.files.length > 0) {
           await useDocumentsStore.getState().openPaths(payload.files);
         } else if (session && session.documents.length > 0) {
           await restoreSessionDocuments(session);
@@ -164,6 +189,16 @@ export function App() {
         void openPayload(payload.files, payload.workspace);
       })
       .then((unlisten) => disposers.push(unlisten));
+
+    // Android hands over a document opened with this application while it was
+    // already running ("Open with…"), which never goes through the CLI.
+    if (mobile) {
+      void ipc
+        .onOpenUri((uri) => {
+          void openOnMobile(uri);
+        })
+        .then((unlisten) => disposers.push(unlisten));
+    }
 
     void ipc
       .onFsChanged((payload) => {
@@ -454,7 +489,10 @@ export function App() {
 
   // --- split resizing -----------------------------------------------------
 
-  const layout: LayoutMode = settings.view.layout;
+  // On a phone the layout is not a setting: the document is rendered, and the
+  // menu can put the source text on screen instead. On the desktop it stays
+  // exactly what the user chose.
+  const layout: LayoutMode = mobile ? (mobileSource ? "editor" : "preview") : settings.view.layout;
   const isHorizontalSplit = layout === "split-h";
 
   const startResize = useCallback(
@@ -486,65 +524,84 @@ export function App() {
   // Printing reads the preview, so it has to be mounted even in editor-only mode.
   const showPreview = layout !== "editor" || printing;
 
+  // A phone shows fewer surroundings, not more: no explorer, no outline, no
+  // tabs, no status bar, and no way to switch split directions by dragging.
+  const showExplorer = !mobile && settings.view.showExplorer;
+  const showOutline = !mobile && settings.view.showOutline;
+
   return (
-    <div className="app-shell" data-layout={layout}>
-      <MenuBar />
-      <TabBar />
+    <div className="app-shell" data-layout={layout} data-mobile={mobile ? "true" : undefined}>
+      {mobile ? (
+        <MobileMenu sourceVisible={mobileSource} onToggleSource={() => setMobileSource((value) => !value)} />
+      ) : (
+        <>
+          <MenuBar />
+          <TabBar />
+        </>
+      )}
 
       <div className="app-workspace">
-        {settings.view.showExplorer && (
+        {showExplorer && (
           <aside className="sidebar sidebar--left" style={{ width: settings.view.explorerWidth }}>
             <Explorer />
           </aside>
         )}
 
-        <div
-          className={cx(
-            "app-panes",
-            isHorizontalSplit ? "is-horizontal" : "is-vertical",
-            dragging && "is-dragging",
-          )}
-          ref={splitContainerRef}
-        >
-          {showEditor && (
-            <section
-              className="pane pane--editor"
-              style={
-                showPreview
-                  ? isHorizontalSplit
-                    ? { height: `${settings.view.splitRatio * 100}%` }
-                    : { width: `${settings.view.splitRatio * 100}%` }
-                  : undefined
-              }
-            >
-              <EditorPane
-                onTogglePreview={() => {
-                  // Read the layout fresh: inside this branch TypeScript has
-                  // already narrowed the local `layout` constant.
-                  const current = useSettingsStore.getState().settings.view.layout;
-                  patch("view", { layout: current === "preview" ? "editor" : "preview" });
-                }}
+        {mobile && !activeDocument ? (
+          <MobileEmptyState />
+        ) : (
+          <div
+            className={cx(
+              "app-panes",
+              isHorizontalSplit ? "is-horizontal" : "is-vertical",
+              dragging && "is-dragging",
+            )}
+            ref={splitContainerRef}
+          >
+            {showEditor && (
+              <section
+                className="pane pane--editor"
+                style={
+                  showPreview
+                    ? isHorizontalSplit
+                      ? { height: `${settings.view.splitRatio * 100}%` }
+                      : { width: `${settings.view.splitRatio * 100}%` }
+                    : undefined
+                }
+              >
+                <EditorPane
+                  onTogglePreview={() => {
+                    // Android has exactly two layouts, and the toggle in the
+                    // editor banner means the same thing as the menu entry.
+                    if (mobile) {
+                      setMobileSource((value) => !value);
+                      return;
+                    }
+                    const current = useSettingsStore.getState().settings.view.layout;
+                    patch("view", { layout: current === "preview" ? "editor" : "preview" });
+                  }}
+                />
+              </section>
+            )}
+
+            {showEditor && showPreview && !mobile && (
+              <div
+                className={cx("splitter", isHorizontalSplit ? "splitter--horizontal" : "splitter--vertical")}
+                onPointerDown={startResize}
+                role="separator"
+                aria-orientation={isHorizontalSplit ? "horizontal" : "vertical"}
               />
-            </section>
-          )}
+            )}
 
-          {showEditor && showPreview && (
-            <div
-              className={cx("splitter", isHorizontalSplit ? "splitter--horizontal" : "splitter--vertical")}
-              onPointerDown={startResize}
-              role="separator"
-              aria-orientation={isHorizontalSplit ? "horizontal" : "vertical"}
-            />
-          )}
+            {showPreview && (
+              <section className="pane pane--preview">
+                <PreviewPane />
+              </section>
+            )}
+          </div>
+        )}
 
-          {showPreview && (
-            <section className="pane pane--preview">
-              <PreviewPane />
-            </section>
-          )}
-        </div>
-
-        {settings.view.showOutline && (
+        {showOutline && (
           <aside className="sidebar sidebar--right" style={{ width: settings.view.outlineWidth }}>
             {/* Remounting per document resets the expansion state, which is
                 exactly what `key` is for. */}
@@ -553,7 +610,7 @@ export function App() {
         )}
       </div>
 
-      <StatusBar />
+      {!mobile && <StatusBar />}
       <Toasts />
 
       {dialog && (

@@ -32,6 +32,8 @@ export const EVENTS = {
   openPaths: "app://open-paths",
   fsChanged: "fs://changed",
   quitRequested: "app://quit-requested",
+  /** Android only: a document handed to the running app by another one. */
+  openUri: "android://open-uri",
 } as const;
 
 /** Normalised failure raised by any command. */
@@ -78,6 +80,18 @@ export async function call<T>(command: string, args?: Record<string, unknown>): 
 // ---------------------------------------------------------------------------
 
 export const takeLaunchPayload = () => call<LaunchPayload>("take_launch_payload");
+
+/**
+ * Android only: the document the system opened the application with, if any.
+ *
+ * Drained once, exactly like {@link takeLaunchPayload} — a second call returns
+ * nothing rather than reopening the same file.
+ */
+export const takeLaunchUri = () => call<string | null>("take_launch_uri");
+
+/** Android only: a file handed to the running application by another one. */
+export const onOpenUri = (handler: (uri: string) => void): Promise<UnlistenFn> =>
+  listen<{ uri: string; name?: string }>(EVENTS.openUri, (event) => handler(event.payload.uri));
 
 export const notifyFrontendReady = () => call<void>("notify_frontend_ready");
 

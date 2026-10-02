@@ -1178,3 +1178,147 @@ button:focus-visible {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Android shell
+ *
+ * The phone build shows the rendered document and almost nothing else: one bar
+ * with the document's name, one button to open a file and one menu. The safe
+ * area insets keep the bar clear of the status bar and the gesture bar, and
+ * every row is a full finger tall.
+ * ------------------------------------------------------------------------- */
+
+.app-shell[data-mobile="true"] {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.mobile-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  height: 48px;
+  padding: 0 4px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.mobile-bar__open,
+.mobile-bar__button {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+}
+
+.mobile-bar__open:active,
+.mobile-bar__button:active,
+.mobile-bar__button.is-open {
+  background: var(--bg-inset);
+}
+
+.mobile-bar__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-sheet {
+  position: absolute;
+  top: 100%;
+  right: 4px;
+  z-index: 60;
+  min-width: 260px;
+  max-height: 75vh;
+  overflow: auto;
+  padding: 4px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-overlay);
+}
+
+.mobile-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mobile-row:active:not(.is-disabled) {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.mobile-row.is-disabled {
+  color: var(--fg-subtle);
+}
+
+.mobile-row--nested {
+  padding-left: 28px;
+}
+
+.mobile-row__check {
+  width: 12px;
+  flex: 0 0 auto;
+}
+
+.mobile-row__label {
+  flex: 1;
+}
+
+.mobile-row__arrow {
+  color: var(--fg-subtle);
+}
+
+.mobile-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.mobile-empty__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.mobile-empty__hint {
+  margin: 0;
+  max-width: 320px;
+  color: var(--fg-muted);
+}
+
+.mobile-empty__action {
+  margin-top: 8px;
+  padding: 12px 22px;
+  font-size: 15px;
+  color: var(--accent-fg);
+  background: var(--accent);
+  border: none;
+  border-radius: 999px;
+}

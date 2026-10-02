@@ -48,6 +48,11 @@
   .pane-placeholder,
   .editor-banner,
   .preview-banner,
+  /* The phone shell's bar, sheet and empty state are chrome too: a page that
+     is about to be printed should carry the document, not the way to it. */
+  .mobile-bar,
+  .mobile-sheet,
+  .mobile-empty,
   /* Doubled up with `.app-shell` so these win over the layout rules below
      whatever order the bundler emits them in. */
   .app-shell .pane--editor {
@@ -77,6 +82,12 @@
     padding: 0 !important;
     margin: 0 !important;
     max-width: none !important;
+  }
+
+  /* The phone shell insets itself for the status and gesture bars; paper has
+     neither, and the margin belongs to the page. */
+  .app-shell[data-mobile="true"] {
+    padding: 0 !important;
   }
 
   /* --- interactive affordances have no meaning on paper ------------------ */

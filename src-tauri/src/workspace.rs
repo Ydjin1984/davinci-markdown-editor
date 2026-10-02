@@ -296,6 +296,11 @@ pub fn rename_entry(path: &Path, new_name: &str) -> Result<PathBuf> {
 
 /// Move a path to the OS trash. `permanent` is reserved for the explicit
 /// "delete permanently" confirmation in the UI.
+///
+/// Android has no trash for an application to move files into — the platform's
+/// own file manager owns that — so only the permanent branch exists there. The
+/// mobile interface has no delete at all, which keeps that difference out of
+/// the user's way.
 pub fn delete_entry(path: &Path, permanent: bool) -> Result<()> {
     if !path.exists() {
         return Err(AppError::from_io(
@@ -304,18 +309,22 @@ pub fn delete_entry(path: &Path, permanent: bool) -> Result<()> {
         ));
     }
 
-    if permanent {
-        if path.is_dir() {
-            fs::remove_dir_all(path).map_err(|e| AppError::from_io(&e, path))
-        } else {
-            fs::remove_file(path).map_err(|e| AppError::from_io(&e, path))
-        }
-    } else {
-        trash::delete(path).map_err(|err| {
+    #[cfg(desktop)]
+    if !permanent {
+        return trash::delete(path).map_err(|err| {
             AppError::new(ErrorCode::Io, "The item could not be moved to the trash.")
                 .with_path(path)
                 .with_detail(err.to_string())
-        })
+        });
+    }
+
+    #[cfg(not(desktop))]
+    let _ = permanent;
+
+    if path.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| AppError::from_io(&e, path))
+    } else {
+        fs::remove_file(path).map_err(|e| AppError::from_io(&e, path))
     }
 }
 

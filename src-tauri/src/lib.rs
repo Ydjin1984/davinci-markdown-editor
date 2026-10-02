@@ -6,6 +6,7 @@ pub mod commands;
 pub mod error;
 pub mod filesystem;
 pub mod links;
+pub mod mobile;
 pub mod paths;
 pub mod platform;
 pub mod settings;
@@ -15,6 +16,7 @@ pub mod workspace;
 
 use std::io::Write;
 use std::path::PathBuf;
+#[cfg(desktop)]
 use std::time::Duration;
 use tauri::Manager;
 
@@ -28,6 +30,7 @@ pub const QUIT_REQUESTED_EVENT: &str = "app://quit-requested";
 /// Grace period before the window is forced visible even if the UI never
 /// reports readiness. Prevents a webview failure from looking like "nothing
 /// happened" when the user double-clicks a document.
+#[cfg(desktop)]
 const WINDOW_SHOW_FALLBACK: Duration = Duration::from_secs(5);
 
 /// Never panics, unlike `println!`, which aborts when stdout is a detached
@@ -104,6 +107,13 @@ fn attach_parent_console() {
 #[cfg(not(windows))]
 fn attach_parent_console() {}
 
+/// Start the application.
+///
+/// On Android and iOS the same function is the library entry point the
+/// platform calls into — `main` does not exist there, and the macro is what
+/// exports the symbols the mobile runtime looks for. The attribute is inert on
+/// the desktop, where `main` calls this directly.
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let raw_args: Vec<String> = std::env::args().skip(1).collect();
     let args = cli::parse(&raw_args);
@@ -127,17 +137,29 @@ pub fn run() {
     let mut builder = tauri::Builder::default();
 
     // The single-instance plugin has to be registered first: it decides whether
-    // this process becomes the primary instance.
-    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-        // argv[0] is the executable; the rest is the user's request.
-        let forwarded = cli::parse(argv.iter().skip(1).map(String::as_str));
-        let request = cli::classify(&forwarded.paths);
-        commands::deliver_launch(app, request);
-    }));
+    // this process becomes the primary instance. Android has its own launch
+    // model (one activity, intents instead of a second process), so the plugin
+    // has no meaning there.
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // argv[0] is the executable; the rest is the user's request.
+            let forwarded = cli::parse(argv.iter().skip(1).map(String::as_str));
+            let request = cli::classify(&forwarded.paths);
+            commands::deliver_launch(app, request);
+        }));
+    }
 
     builder = builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init());
+
+    // Files, saving and printing go through the platform's own pickers and
+    // `PrintManager` on Android; the Kotlin side is registered here.
+    #[cfg(target_os = "android")]
+    {
+        builder = builder.plugin(mobile::plugin());
+    }
 
     builder = asset::register(builder);
 
@@ -163,6 +185,8 @@ pub fn run() {
 
             // The window has to exist before its webview settings can be
             // adjusted, and the frontend must not run before that happens.
+            // Only Windows has accelerators of that kind to switch off.
+            #[cfg(desktop)]
             if let Some(window) = handle.get_webview_window("main") {
                 platform::disable_browser_accelerator_keys(&window);
             }
@@ -174,24 +198,29 @@ pub fn run() {
             platform::install_macos_quit_menu(app)?;
 
             // Safety net: if the frontend never reports readiness, still show a
-            // window rather than leaving the user with a silent process.
-            let fallback_handle = handle.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(WINDOW_SHOW_FALLBACK);
-                let state = fallback_handle.state::<state::AppState>();
-                if !state.is_frontend_ready() {
-                    log::warn!("frontend did not report readiness; showing the window anyway");
-                    if let Some(window) = fallback_handle.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
+            // window rather than leaving the user with a silent process. The
+            // Android activity shows itself, so the net is desktop-only.
+            #[cfg(desktop)]
+            {
+                let fallback_handle = handle.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(WINDOW_SHOW_FALLBACK);
+                    let state = fallback_handle.state::<state::AppState>();
+                    if !state.is_frontend_ready() {
+                        log::warn!("frontend did not report readiness; showing the window anyway");
+                        if let Some(window) = fallback_handle.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
                     }
-                }
-            });
+                });
+            }
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::take_launch_payload,
+            commands::take_launch_uri,
             commands::notify_frontend_ready,
             commands::show_main_window,
             commands::get_settings,
