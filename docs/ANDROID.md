@@ -114,19 +114,41 @@ export GRADLE_USER_HOME="E:/Android/gradle"     # кэш Gradle — тоже н�
 export ANDROID_AVD_HOME="E:/Android/avd"
 
 npx tauri android init                                   # один раз (в репозитории уже есть)
-npx tauri android build --apk --debug --target x86_64    # APK для эмулятора
-npx tauri android build --apk --target aarch64           # APK для телефона
-npx tauri android build --apk --target universal         # один на всё
+
+# то, что уезжает в релиз: две архитектуры, каждая в своём APK
+npx tauri android build --apk --split-per-abi --target aarch64 x86_64
+# → apk/arm64/release/app-arm64-release.apk   (телефоны и планшеты)
+# → apk/x86_64/release/app-x86_64-release.apk (эмулятор)
+
+# для отладки на эмуляторе
+npx tauri android build --apk --debug --target x86_64
+# → apk/universal/debug/app-universal-debug.apk
 ```
 
-Артефакты: `src-tauri/gen/android/app/build/outputs/apk/universal/<profile>/` —
-`app-universal-debug.apk` или `app-universal-release.apk` (в APK попадает только
-выбранная `--target` архитектура). Имя файла от архитектуры не зависит, поэтому
-каждая сборка перезаписывает предыдущую: собрав `x86_64` для эмулятора, скопируйте
-APK, если после этого понадобится сборка для телефона.
+Без `--split-per-abi` сборка кладёт APK в `apk/universal/<profile>/app-universal-<profile>.apk`
+независимо от архитектуры: имя файла от неё не зависит, и следующая сборка
+перезаписывает предыдущую.
 
-Подписанный release-APK потребует `keystore.properties` в `gen/android` (файл в
-`.gitignore`, ключ и пароль лежат вне репозитория).
+### Подпись
+
+`app/build.gradle.kts` берёт ключ из `gen/android/keystore.properties` — файла в
+`.gitignore`, потому что в нём пароль:
+
+```properties
+storeFile=E:/Android/keystore/markedit-android.jks
+storePassword=…
+keyAlias=markedit
+keyPassword=…
+```
+
+Если файла нет, release-APK собирается неподписанным (Android его не установит);
+сборка при этом не падает. Debug-сборки подписываются обычным debug-ключом и
+ставятся на любое устройство.
+
+`proguard-rules.pro` держит `io.davinci.markdown.MobilePlugin` целиком: в release
+включён R8, а плагин вызывается по имени (`register_android_plugin` плюс
+reflection по `@Command`), поэтому без этого правила выбор файла, сохранение и
+печать молча перестают работать только в release-сборке.
 
 ### Иконки
 
@@ -141,7 +163,7 @@ cp -r src-tauri/icons/android/* src-tauri/gen/android/app/src/main/res/
 ## Проверка
 
 1. Эмулятор: `emulator -avd davinci -no-snapshot -no-audio -gpu swiftshader_indirect`.
-2. Установка: `adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`.
+2. Установка: `adb install -r src-tauri/gen/android/app/build/outputs/apk/x86_64/release/app-x86_64-release.apk`.
 3. Запуск: `adb shell am start -n io.davinci.markdown/.MainActivity`.
 4. Открыть файл через меню → виден отрендеренный документ (заголовки, таблицы, код, формулы, диаграмма).
 5. «Ещё → Исходный текст» → редактор; назад → снова рендер.

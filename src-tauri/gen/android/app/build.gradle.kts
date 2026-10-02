@@ -14,6 +14,18 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Release signing. The keystore never enters the repository: its path, alias
+// and passwords live in keystore.properties, which .gitignore keeps out. A
+// machine without that file still builds a release APK, just an unsigned one,
+// rather than failing the build.
+val keystoreProperties = Properties().apply {
+    val propFile = rootProject.file("keystore.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+val releaseKeystore = keystoreProperties.getProperty("storeFile")?.takeIf { it.isNotBlank() }
+
 android {
     compileSdk = 37
     namespace = "io.davinci.markdown"
@@ -24,6 +36,16 @@ android {
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -48,6 +70,9 @@ android {
                   exclude("build/**")
                 }.files.toTypedArray()
             )
+            if (releaseKeystore != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

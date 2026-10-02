@@ -179,16 +179,20 @@ explicitly rather than assuming.
 
 ## 3c. Android — install on a device or emulator
 
-The APK is built locally rather than by the workflow, so this section is the only gate it passes
-through. [ANDROID.md](ANDROID.md) has the toolchain and the exact commands.
+The APKs are built locally rather than by the workflow, so this section is the only gate they pass
+through. [ANDROID.md](ANDROID.md) has the toolchain, the signing setup and the exact commands.
 
 **Install**
 
-- [ ] `npx tauri android build --apk --target aarch64` (and `--target x86_64` for the emulator)
-      produces an APK
+- [ ] `npx tauri android build --apk --split-per-abi --target aarch64 x86_64` produces two APKs
+- [ ] `apksigner verify --print-certs` names the project's key, not the debug key
 - [ ] `adb install -r …` succeeds and the launcher icon is the project's, not the template's
 - [ ] The first launch shows the "no document is open" screen rather than a blank window
 - [ ] The application appears in _Settings → Apps_ as **DaVinci Markdown Editor**
+
+> Check the **release** APK, not the debug one: R8 shrinks and renames classes, and the file
+> picker, saving and printing reach `MobilePlugin` by name. `app/proguard-rules.pro` keeps it, and
+> the only way to know that rule still holds is to walk the three paths below on a release build.
 
 **Reading is the default view**
 
@@ -321,8 +325,9 @@ Produced by the workflow on a version tag; it opens a **draft** release with all
 - [ ] Linux `.deb` (mandatory) and `.rpm`
 - [ ] Linux `.AppImage` — large, because it carries its own WebKitGTK stack
 - [ ] macOS `.dmg` for `aarch64` and `x64`
-- [ ] Android `.apk` — built locally for now, see section 3c above; the workflow does not
-      attach one yet and the release notes must say so
+- [ ] Android `.apk` for `arm64-v8a` and `x86_64` — built locally and uploaded by hand, see section
+      3c above; the workflow still does not build them, and the checksum file has to be extended
+      with the two APKs before the release is published
 - [ ] The `.deb` desktop-integration check passed in CI, which is what proves the package
       actually claims `text/markdown` and passes `%F` through to the binary
 - [ ] One merged `SHA256SUMS.txt` covering every artefact
@@ -336,3 +341,5 @@ Produced by the workflow on a version tag; it opens a **draft** release with all
 - [ ] Drag & drop of images and paste-from-clipboard are not implemented
 - [ ] PDF export produces a file through the system print dialog rather than silently
 - [ ] The external-change _Compare_ view is not implemented
+- [ ] Android APKs are signed with the project's key but built by hand; the workflow does not
+      produce them, so a release tag alone does not generate an Android build

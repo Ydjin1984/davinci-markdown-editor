@@ -166,19 +166,25 @@ the system's `ContentResolver`, and the permission survives a restart, so _Open 
 needed for documents Android has not seen before. The `.md` family is registered with the system, so
 tapping a Markdown document in a file manager offers this editor.
 
-There are no release APKs on the releases page yet — the Android build needs the SDK and the NDK,
-and the local recipe with the emulator checklist is in [docs/ANDROID.md](docs/ANDROID.md):
+The APKs are attached to the [releases page](https://github.com/Ydjin1984/davinci-markdown-editor/releases)
+— `…_arm64-v8a.apk` for phones and tablets, `…_x86_64.apk` for emulators. They are signed with the
+project's release key, so a later version installs over an earlier one, and installing the first
+asks for _Install unknown apps_ permission once, as any APK from outside a store does.
+
+To build them yourself you need the SDK and the NDK; [docs/ANDROID.md](docs/ANDROID.md) has the
+toolchain paths, the signing setup and the emulator checklist:
 
 ```bash
-npx tauri android build --apk --target aarch64     # phones and tablets
-npx tauri android build --apk --target x86_64      # emulators
-# both write apk/universal/…/app-universal-release.apk, so keep a copy of each
-adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+npx tauri android build --apk --split-per-abi --target aarch64 x86_64
+# → apk/arm64/release/app-arm64-release.apk  and  apk/x86_64/release/app-x86_64-release.apk
+# without --split-per-abi a single target lands in apk/universal/…/app-universal-release.apk
+adb install -r src-tauri/gen/android/app/build/outputs/apk/arm64/release/app-arm64-release.apk
 ```
 
-> The APK is stored unsigned unless a `keystore.properties` is present in `src-tauri/gen/android`
-> with the key and its passwords; without it Android installs the debug-signed build only after the
-> usual _Install unknown apps_ permission.
+> The release APK is signed only when `src-tauri/gen/android/keystore.properties` describes a
+> keystore; without that file the build still succeeds and produces an unsigned APK, which Android
+> refuses to install. Debug builds (`--debug`) are signed with the usual debug key and install
+> anywhere, which is what the emulator workflow uses.
 
 ---
 

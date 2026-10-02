@@ -5,6 +5,13 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
+# The mobile plugin is reached by name rather than by reference: Rust
+# registers it with register_android_plugin(identifier, class) and Tauri's
+# plugin manager looks the class up reflectively before dispatching @Command
+# methods the same way. Shrinking the class, its name or its methods would
+# break the file picker, saving and printing in release builds only.
+-keep class io.davinci.markdown.MobilePlugin { *; }
+
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
 # class:
