@@ -172,6 +172,7 @@ and the local recipe with the emulator checklist is in [docs/ANDROID.md](docs/AN
 ```bash
 npx tauri android build --apk --target aarch64     # phones and tablets
 npx tauri android build --apk --target x86_64      # emulators
+# both write apk/universal/…/app-universal-release.apk, so keep a copy of each
 adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
 ```
 

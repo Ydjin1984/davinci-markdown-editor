@@ -121,7 +121,9 @@ npx tauri android build --apk --target universal         # один на всё
 
 Артефакты: `src-tauri/gen/android/app/build/outputs/apk/universal/<profile>/` —
 `app-universal-debug.apk` или `app-universal-release.apk` (в APK попадает только
-выбранная `--target` архитектура).
+выбранная `--target` архитектура). Имя файла от архитектуры не зависит, поэтому
+каждая сборка перезаписывает предыдущую: собрав `x86_64` для эмулятора, скопируйте
+APK, если после этого понадобится сборка для телефона.
 
 Подписанный release-APK потребует `keystore.properties` в `gen/android` (файл в
 `.gitignore`, ключ и пароль лежат вне репозитория).
