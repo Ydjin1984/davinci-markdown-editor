@@ -11,8 +11,12 @@ dist-ssr/
 # Rust / Tauri build output
 src-tauri/target/
 src-tauri/gen/schemas/
-src-tauri/gen/android/
 src-tauri/gen/apple/
+# The generated Android project is kept in the repository: it carries the
+# Kotlin plugin that reads `content://` documents and prints, and the intent
+# filters that make the application open `.md` files. Its own .gitignore files
+# already leave out the build output, the machine-specific settings and
+# everything the Tauri CLI regenerates.
 
 # Editor and OS noise
 .vscode/*
