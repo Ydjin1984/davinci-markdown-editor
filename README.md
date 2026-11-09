@@ -4,9 +4,10 @@
 
 # DaVinci Markdown Editor
 
-**A Markdown editor that behaves like a document, not like a web page in a window.**
+**A document editor that behaves like a document, not like a web page in a window.**
 
-GitHub Flavored Markdown · Mermaid diagrams · KaTeX math · Shiki highlighting · live preview ·
+Markdown · JSON · CSV · LOG · XML — with GitHub Flavored Markdown, Mermaid diagrams in the DaVinci
+palette, KaTeX math, Shiki highlighting, live preview and a structured view for every data format ·
 native file associations on Windows, Linux and macOS
 
 [![Build](https://github.com/Ydjin1984/davinci-markdown-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/Ydjin1984/davinci-markdown-editor/actions/workflows/ci.yml)
@@ -14,7 +15,7 @@ native file associations on Windows, Linux and macOS
 [![Rust](https://img.shields.io/badge/Rust-1.82+-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-119%20frontend%20%C2%B7%2069%20Rust-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-350%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
@@ -25,13 +26,19 @@ native file associations on Windows, Linux and macOS
 
 ## Why this one
 
-**It installs as a document handler.** Double-click a `.md` file in Explorer or your file manager
-and it opens in a tab of the running window — a second launch hands the path to the first instead
-of starting another process. No account, no cloud, nothing phoning home.
+**It installs as a document handler.** Double-click a `.md`, `.json`, `.csv`, `.log` or `.xml` file
+in Explorer or your file manager and it opens in a tab of the running window — a second launch hands
+the path to the first instead of starting another process. Each format has its own icon in the shell.
+No account, no cloud, nothing phoning home.
 
-**Diagrams are a first-class feature, not a plugin.** Mermaid is rendered, zoomable and exportable
-as SVG, and a diagram that fails to parse shows an error card _with its source still visible_ while
-the rest of the document keeps rendering.
+**A data file opens as data.** JSON and XML show a lossless tree with the source always one click
+away, CSV becomes a real table with quoting and multi-line cells, and LOG becomes a filterable event
+list with levels and stack traces. The file itself is never rewritten by the viewer: source text
+stays the single source of truth, so saving is byte-for-byte safe.
+
+**Diagrams are a first-class feature, not a plugin.** Mermaid is rendered with the DaVinci palette,
+zoomable, fit-to-width by default and exportable as SVG, and a diagram that fails to parse shows an
+error card _with its source still visible_ while the rest of the document keeps rendering.
 
 **Nothing is lost.** Saves are atomic, the watcher detects external edits and never mistakes your
 own save for one, and a file that changed on disk is not overwritten without asking.
@@ -60,9 +67,9 @@ Download from the [releases page](https://github.com/Ydjin1984/davinci-markdown-
 | `…-setup.exe` | NSIS installer, recommended. Per-user, no administrator rights needed. |
 | `….msi`       | MSI for managed deployments.                                           |
 
-Both register `.md`, `.markdown`, `.mdown`, `.mkdn` and `.mkd`, add an **Open with** entry, and
-remove their registration on uninstall. WebView2 is required and is already present on Windows 10
-1803+ and Windows 11.
+Both register the five format families (Markdown, JSON, CSV, LOG and XML), add an **Open with**
+entry and a per-format icon for each, and restore the previous associations on uninstall. WebView2 is
+required and is already present on Windows 10 1803+ and Windows 11.
 
 SmartScreen warns about an unknown publisher because the installers are not code-signed yet;
 _More info → Run anyway_ continues.
@@ -208,7 +215,12 @@ the application is already running is handed to that instance rather than droppe
 | Area          |                                                                                                                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Rendering** | CommonMark and GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes, and YAML or TOML front matter shown as a metadata card rather than a stray heading |
-| **Diagrams**  | Flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline and pie — with zoom, fit, and SVG copy or export                                                          |
+| **Formats**   | Markdown, JSON, CSV, LOG, XML and plain text — each with its own editor grammar, preview mode, file icon and operating-system association                                                    |
+| **Diagrams**  | Flowchart, sequence, class, state, ER, Gantt, Git graph, mindmap, timeline and pie — in the DaVinci palette, with fit, 100%, zoom and SVG copy or export                              |
+| **JSON**      | Lossless tree: exact number lexemes (`9007199254740993` stays exact), duplicate keys kept side by side, JSON Pointer copy, format and minify as one undo step                         |
+| **CSV**       | Real RFC 4180 parsing: quotes, semi-colon, tab and pipe dialects, line breaks inside cells, sortable virtualised table with record numbers                                           |
+| **LOG**       | Event list with levels, source, filters, counts before and after filtering, and collapsible stack traces attached to their event                                                    |
+| **XML**       | Tree in source order with mixed content, namespaces, attributes, CDATA, comments and processing instructions; `DOCTYPE` is reported, never loaded                                  |
 | **Code**      | Shiki highlighting for every bundled grammar, loaded on demand, with a copy button per block and a theme matching the light or dark mode                                             |
 | **Math**      | KaTeX inline and display, with a malformed formula isolated to its own block                                                                                                         |
 | **Editor**    | CodeMirror 6: multi-cursor, code folding, bracket matching, find and replace, and per-tab undo history that survives switching tabs                                                  |
@@ -217,6 +229,43 @@ the application is already running is handed to that instance rather than droppe
 | **Export**    | PDF with real selectable text; a single self-contained HTML file                                                                                                                     |
 | **Files**     | UTF-8, UTF-8 BOM, UTF-16 and legacy encodings; LF and CRLF preserved per file; atomic writes                                                                                         |
 | **Themes**    | Light, Dark and System, applied to the shell and the preview together                                                                                                                |
+
+---
+
+## Document formats
+
+The editor understands six kinds of text document. The format is decided by the extension — upper
+case included — and an unknown extension opens as plain text rather than failing.
+
+| Format   | Extensions                                                    | Preview                                     | Source editing          |
+| -------- | ------------------------------------------------------------- | ------------------------------------------- | ----------------------- |
+| Markdown | `.md` `.markdown` `.mdown` `.mkdn` `.mkd` `.mdx` `.mdtxt` …   | Rendered document                           | Full, with Markdown commands |
+| JSON     | `.json` `.geojson` `.webmanifest`                             | Tree with typed values and diagnostics      | Full                    |
+| CSV      | `.csv` `.tsv`                                                 | Table with delimiter and header detection   | Full                    |
+| LOG      | `.log` `.ndjson`                                              | Event list with levels and filters          | Full                    |
+| XML      | `.xml` `.xsd` `.xsl` `.xslt` `.rss` `.atom` `.plist`          | Tree with mixed content and namespaces      | Full                    |
+| Text     | `.txt` `.text` `.ini` `.cfg` `.conf` `.yaml` `.yml` `.toml`   | Read-only source with line numbers          | Full                    |
+
+**Every structured view is derived from the source text, never written back to it.** Formatting the
+JSON tree rewrites the editor buffer only when you explicitly press _Format_ or _Minify_, as one
+undo step. Sorting or filtering a CSV table or a LOG event list affects the view only, so `Ctrl+S`
+after sorting saves exactly the bytes that were there before.
+
+**Losses are refused, not guessed.** A JSON number is kept as its exact lexeme; duplicate keys are
+shown with a warning instead of being silently merged; CSV cells stay strings (`000123` never becomes
+`123`); XML mixed content keeps its order (`До `, `<b>`, ` после`); a LOG level is read from the level
+field, never guessed from the word `ERROR` inside a message. A parse error shows a position with a
+click-through to the source and never hides the rest of the document.
+
+**Large files degrade honestly.** Above 2 MiB the structured view starts in the source with a
+_Build view_ button, so opening a 10 MiB log cannot freeze the window. CSV tables render only the
+rows in view, and a truncated model says so instead of pretending to be complete.
+
+The five formats come with generated brand icons — a graphite document with the DV mark and a
+format-specific colour and symbol — used in the explorer, the tab bar and the Windows shell. The
+installer registers one ProgID per format, so Explorer shows a different icon for a `.json` and a
+`.csv` file. Icons are produced from the PNG masters by
+[`scripts/generate-filetype-icons.py`](scripts/generate-filetype-icons.py).
 
 ---
 
@@ -255,17 +304,20 @@ the application is already running is handed to that instance rather than droppe
 ```mermaid
 flowchart TB
     subgraph UI["React + TypeScript"]
-        ED["CodeMirror 6<br/>source editor"]
-        PV["Preview pane"]
+        ED["CodeMirror 6<br/>per-format grammar"]
+        PV["Markdown preview"]
+        FV["JSON · CSV · LOG · XML<br/>structured viewers"]
         EX["Explorer · Outline · Tabs · Settings"]
     end
 
-    subgraph ENGINE["Markdown engine — no UI dependency"]
-        PIPE["unified pipeline<br/>remark → rehype"]
+    subgraph ENGINE["Document engine — no UI dependency"]
+        REG["Registry<br/>kind · modes · grammar"]
+        PIPE["Markdown pipeline<br/>remark → rehype"]
         SAN["Sanitiser"]
         MM["Mermaid"]
         KX["KaTeX"]
         SH["Shiki"]
+        PRS["Lossless parsers<br/>JSON · CSV · LOG · XML"]
     end
 
     subgraph CORE["Rust core — Tauri 2"]
@@ -275,11 +327,14 @@ flowchart TB
         OS["Single instance · CLI · file associations"]
     end
 
-    ED --> PIPE
+    ED --> REG
+    REG --> PIPE
     PIPE --> SAN --> MM --> KX --> SH --> PV
+    REG --> PRS --> FV
     UI <-->|IPC| CORE
     AS --> PV
     FS --> PIPE
+    FS --> PRS
     WT --> UI
 ```
 
@@ -288,6 +343,18 @@ flowchart TB
 **The Markdown engine has no UI dependency.** `renderMarkdown(source, options)` takes a string and
 returns HTML, an outline and the diagram sources. That keeps it testable on its own and reusable by
 the export features.
+
+**Formats share one registry and one viewer contract.** `src/documents/registry.ts` is the single
+answer to "what is this file": extensions, MIME type, CodeMirror grammar, preview modes and the Save
+As filter. A format module under `src/formats/<kind>/` supplies a pure parser, a viewer and an
+outline builder; the preview dispatcher picks it by document kind and falls back to the source view.
+Adding a format is one registry entry and one module, not a change to the menu, the tab bar and the
+status bar.
+
+**A viewer derives a model and never owns the text.** The raw source is what is saved; a parse error,
+a sort or a filter cannot corrupt it. That is why JSON keeps exact number lexemes and duplicate keys,
+XML keeps mixed-content order, CSV keeps every cell a string, and a LOG level is read from the level
+field rather than guessed from the message.
 
 **Sanitisation is the security boundary, and its position in the pipeline is deliberate.** Raw HTML
 is parsed and then forced through a schema; KaTeX, Shiki and Mermaid run _after_ it, building markup
@@ -317,8 +384,13 @@ prompt against itself.
 
 **Diagrams are cached by content and theme.** Unchanged diagrams are re-inserted from cache on the
 next keystroke, and every render is generation-checked so a slow async render cannot overwrite a
-newer result. Mermaid runs with `securityLevel: 'strict'` and SVG text labels rather than
-`foreignObject`, so an exported SVG opens anywhere.
+newer result. The cache key also carries the palette and render versions, so a palette change never
+serves an old SVG. Mermaid runs with `securityLevel: 'strict'` and SVG text labels rather than
+`foreignObject`, so an exported SVG opens anywhere; ids and local references are prefixed on every
+insert, which is what makes two identical diagrams on one page keep working arrows.
+
+**Zoom has exactly one source.** Fit-to-width and the manual zoom both change the SVG's width and
+height attributes — never a CSS transform — so the browser scroll range always matches the drawing.
 
 ### Bundle size note
 
@@ -394,15 +466,20 @@ npm run test:rust    # cargo test
 ## Testing
 
 ```bash
-npm run test        # 119 frontend tests
-npm run test:rust   # 69 Rust tests
+npm run test        # 350 frontend tests
+npm run test:rust   # 85 Rust tests
 ```
 
 **Frontend** (`tests/`) covers CommonMark and GFM output, outline extraction, Mermaid fence
 detection, code block handling, KaTeX error isolation, front matter, asset URL resolution and the
 sanitisation policy — the latter with explicit XSS vectors (`<script>`, `onerror`, `javascript:`,
-`data:text/html`, `<iframe srcdoc>`, `<style>`, `<form>`, KaTeX `\href`). The menu bar has its own
-regression test for a submenu that used to vanish as the pointer entered it.
+`data:text/html`, `<iframe srcdoc>`, `<style>`, `<form>`, KaTeX `\href`). The document registry and
+content sniffer have their own tests, and each structured format has a parser suite built on the
+files in `DaVinci_Render_Kit/examples`: exact JSON numbers and duplicate keys, CSV quoting,
+multi-line cells and ragged rows, LOG event grouping with stack traces, XML mixed content and
+namespaces. The Mermaid suite checks palette contrast, template class definitions, id prefixing and
+the cache key. The menu bar has its own regression test for a submenu that used to vanish as the
+pointer entered it.
 
 **Rust unit tests** cover path normalisation and containment, CLI parsing, encoding and EOL helpers,
 binary sniffing, BOM handling, settings forward-compatibility, workspace name validation and the
@@ -430,15 +507,18 @@ paths, single-instance hand-off, upgrade and uninstall across Windows, Linux and
 src/                     React + TypeScript front end
 ├── app/                 Shell: menu bar and tabs on the desktop, the phone bar and its
 │                        menu on Android, plus dialogs, toasts and the error boundary
-├── editor/              CodeMirror 6: setup, themes, Markdown commands, cursor store
+├── documents/           Document kinds: registry, format detection, viewer contract
+├── formats/             One directory per structured format (pure parser + viewer + outline)
+├── editor/              CodeMirror 6: setup, per-format grammars, themes, commands
 ├── markdown/            Markdown engine — deliberately UI-free
 │   ├── renderer/        unified pipeline and custom rehype plugins
 │   ├── sanitize/        hast-util-sanitize policy
 │   └── code/            Shiki highlighter
-├── mermaid/             Lazy renderer with caching and hydration
-├── preview/             Preview pane, scroll sync, PDF and HTML export
+├── mermaid/             Palette, serialised render queue, SVG sanitiser, hydration
+├── preview/             Preview dispatcher, scroll sync, PDF and HTML export
 ├── explorer/  outline/  tabs/  settings/  workspace/
-├── shared/              IPC wrapper, translations, platform detection, small utilities
+├── shared/              IPC wrapper, translations, file-type icons, small utilities
+├── dev/                 Browser lab for diagram verification (not shipped)
 └── styles/              Application chrome, Markdown rendering, print layout
 
 src-tauri/src/           Rust back end
@@ -449,7 +529,7 @@ src-tauri/src/           Rust back end
 ├── links.rs             Policy for links handed to the operating system
 ├── workspace.rs         Directory listing and file operations
 ├── mobile.rs            Android bridge: content:// documents and printing
-└── settings.rs  state.rs  paths.rs  cli.rs  error.rs  platform.rs
+└── settings.rs  state.rs  paths.rs (document kinds)  cli.rs  error.rs  platform.rs
 
 src-tauri/gen/android/   The Android project, kept in the repository: it carries the
                          Kotlin plugin, the intent filters and the launcher icons
@@ -465,21 +545,30 @@ docs/                      Demo document, release checklist, screenshots, Androi
 outbound access is opening a link you click, and the target is vetted first: only `http`, `https`
 and `mailto`, and never the local machine or a private network.
 
-**Can a Markdown file execute code?** No. Scripts and event handlers are stripped, raw HTML passes
-through a strict schema, and the Content Security Policy forbids inline script. There is a test for
+**Can a document execute code?** No. Scripts and event handlers are stripped, raw HTML passes
+through a strict schema, and the Content Security Policy forbids inline script. The JSON, CSV, LOG
+and XML viewers render text nodes through React, never `innerHTML`, and Mermaid keeps
+`securityLevel: 'strict'` while its own output is sanitised before insertion. There is a test for
 each of those.
 
-**How large is it?** The Windows installer is under 6 MB, the Linux package about 7 MB and the macOS
-disk image about 11 MB. A running window settles around 24–25 MB of resident memory, and reaches a
+**Does it edit data files or only view them?** Both. The source pane is a full editor for every
+format — JSON/XML/CSV/LOG get their own CodeMirror grammar and highlighting, and Save writes the
+buffer back unchanged apart from what you typed. The structured views are read-only derivations:
+sorting a CSV or filtering a log never changes the file, and JSON _Format_/_Minify_ are explicit
+commands applied as one undo step.
+
+**How large is it?** The Windows installer is about 8 MB, the Linux package about 9 MB and the macOS
+disk image about 12 MB. A running window settles around 25–30 MB of resident memory, and reaches a
 usable window in about 110 ms on the machine this was measured on. Your hardware will differ; the
 figures come from the release build, not from a development one.
 
 **Why is the AppImage so much bigger?** It bundles the WebKitGTK stack so it runs on any
 distribution without installing dependencies. The `.deb` and `.rpm` use the system one.
 
-**Does it handle large files?** A 1 MB document is comfortable; CodeMirror is built for that. Very
-large files are worth benchmarking on your own hardware rather than trusting a number from someone
-else's machine.
+**Does it handle large files?** A 1 MB document is comfortable; CodeMirror is built for that. The
+structured formats are guarded separately: above 2 MiB a viewer starts in the source with a _Build
+view_ button, CSV renders only the rows in view, and a truncated model says so. Very large files are
+worth benchmarking on your own hardware rather than trusting a number from someone else's machine.
 
 **Where are my settings?** `%APPDATA%\io.davinci.markdown\` on Windows,
 `~/.config/io.davinci.markdown/` on Linux, `~/Library/Application Support/io.davinci.markdown/` on

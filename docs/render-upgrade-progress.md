@@ -9,13 +9,13 @@ modules are written against.
 | Stage | Scope | State |
 |---|---|---|
 | R0 | Baseline: HEAD pinned to `1b41003`, `npm ci`, `typecheck` and 127 tests green | done |
-| R1 | Mermaid: DaVinci palette, template colours, queue, unique IDs, fit/manual zoom, export | in progress |
-| R2 | Document kinds: registry, detection, CodeMirror languages, open/save, icons | in progress |
-| R3 | JSON and XML: lossless source, tree, diagnostics, navigation | in progress |
-| R4 | CSV: dialects, quoted/multiline cells, table view | in progress |
-| R5 | LOG: profiles, levels, stack traces, filters | in progress |
-| R6 | Icons and OS integration: sizes, UI, Windows associations | pending |
-| R7 | Final matrix, export, offline, regressions, release | pending |
+| R1 | Mermaid: DaVinci palette, template colours, queue, unique IDs, fit/manual zoom, fullscreen, source copy, export | done |
+| R2 | Document kinds: registry, detection, CodeMirror languages, open/save, icons | done |
+| R3 | JSON and XML: lossless source, tree, diagnostics, navigation | done |
+| R4 | CSV: dialects, quoted/multiline cells, table view | done |
+| R5 | LOG: profiles, levels, stack traces, filters | done |
+| R6 | Icons and OS integration: sizes, UI, Windows associations | done |
+| R7 | Final matrix, export, offline, regressions, release | in progress |
 
 ## Baseline (R0)
 
@@ -150,3 +150,64 @@ npm run app:build
   carries the Windows artifacts plus checksums.
 - Installers are not code-signed yet (same as 0.2.2).
 - Follow mode for LOG files and `DOCTYPE` resolution are out of scope for this release.
+- Parser diagnostic messages themselves are technical English text; the surrounding UI is
+  translated. Adding hundreds of per-error i18n keys was deliberately left out of this release.
+- The MSI registers the associations with the application icon; the per-format `DefaultIcon`
+  override is implemented in the NSIS hook only.
+- Mermaid `classDef` written by a document wins over the app palette (by design, per the spec), so a
+  template inserted while in the dark palette keeps its dark fills in the light theme.
+
+## Verification log
+
+| Check | Command | Result |
+|---|---|---|
+| Types | `npm run typecheck` | exit 0 |
+| Lint | `npm run lint` | exit 0 |
+| Format | `npm run format:check` | exit 0 |
+| Frontend tests | `npm run test` | 20 files, 350 tests, exit 0 |
+| Rust format | `cargo fmt -- --check` | exit 0 |
+| Rust lint | `cargo clippy --all-targets -- -D warnings` | exit 0 |
+| Rust tests | `cargo test` | 85 tests, exit 0 |
+| Combined | `npm run verify` | exit 0 |
+| Diagrams, real browser | Chrome CDP against `src/dev/renderLab.html` | 24 diagrams, 23 rendered, 1 expected local error; palette fills `#152d48/#60a5fa` etc.; 0 duplicate ids; 62/62 markers resolve; 0 clipped labels; fit→100%→200% = 527→527→1054 px with `transform: none`; standalone SVG opens over `file://` |
+
+Browser verification notes live in the R1 report; the artefacts are temporary screenshots outside the
+repository. The acceptance matrix in the TZ (M01–M07, J01–J03, C01–C04, L01–L02, X01–X02, F01–F03,
+I01, P01) is covered by the automated suites plus the browser run, with the limitations above stated
+rather than hidden.
+
+### Independent review (task-7)
+
+A second agent reviewed the whole diff against this contract. No blockers. Two major findings were
+fixed before release:
+
+1. The outline of a structured document was recomputed synchronously on every keystroke even with the
+   panel hidden. It is now gated on `view.showOutline`, driven by a deferred value and debounced.
+2. The diagram toolbar lacked fullscreen and "copy source". Both are implemented (a CSS overlay and a
+   clipboard action), and the labels go through i18n.
+
+The minor findings were also fixed: `kind` now follows a rename; JSON _Format_/_Minify_ are disabled
+while the model is stale; `.jsonc` is no longer claimed (no JSONC mode exists, so it opens as text);
+relative links open any supported format; `Ctrl+P` is Markdown-only like the menu commands; returning
+from a structured viewer no longer hydrates diagrams twice; a plain text document gets an
+"Interpret as" selector wired to the content sniffer; the browser-lab chunk list and the Mermaid
+error line now go through i18n. Remaining accepted limitations are listed above.
+
+### Packaging and install verification (local Windows)
+
+The NSIS installer was built with the Rust/React release profile and installed over 0.2.2 on the
+release machine:
+
+| Check | Result |
+|---|---|
+| Silent install (`/S`, currentUser) | exit 0, no administrator rights, about 4 s |
+| Installed version | `davinci-markdown.exe` 0.3.0, SHA-256 matches the executable inside the installer |
+| Icon resources | 51 files under `icons\filetypes` (5 ICO with 7 frames each, 45 PNG 16–512, manifest) |
+| ProgIDs | Five registered; `DefaultIcon` points at the per-format ICO, `shell\open\command` is quoted |
+| Open with / Default apps | `OpenWithProgids` for 21 extensions (foreign entries untouched), `Applications`, `Capabilities`, `RegisteredApplications` |
+| Association backups | The original defaults are snapshotted once and survive repeated installs, so uninstall can restore them |
+| Shell launch | `ShellExecute` on a `.json` file started this application |
+| Uninstall entry | `DisplayVersion=0.3.0`, icon, install location, publisher, help links |
+
+The MSI was built and its file list inspected (same resources, same executable) but not installed.
+Linux and macOS packages are built by CI on their own runners; they were not produced locally.

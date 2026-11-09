@@ -301,6 +301,34 @@ document.
 - [ ] Closing with unsaved changes offers Save / Don't Save / Cancel
 - [ ] Cancel keeps the window open
 
+**Document formats (0.3.0)**
+
+Use the files in `DaVinci_Render_Kit/examples/` (or the inline fixtures in the tests) for the cases
+below.
+
+- [ ] Opening `.json`, `.csv`, `.log` and `.xml` from the explorer, the Open dialog and the shell gives
+      the right kind, editor grammar, viewer and icon
+- [ ] JSON: `config.json` shows 6 keys, `channels[2]`, `serial` as the string `000123` and
+      `preciseInteger` exactly `9007199254740993`
+- [ ] JSON: `duplicate.json` shows both `mode` keys and a warning; `invalid.json` shows a diagnostic
+      with a position and keeps the source reachable
+- [ ] JSON: _Format_ and _Minify_ change the buffer as one undo step and never lose the number lexeme
+- [ ] CSV: `telemetry.csv` is 3 records × 5 columns; the comma and the line break inside quoted cells
+      do not split records; `001` stays a string
+- [ ] CSV: `semicolon.csv` detects `;` and keeps `1,25` as text; `ragged.csv` warns about the row width
+- [ ] CSV: sorting and filtering change the view only — `Ctrl+S` afterwards keeps the original bytes
+- [ ] LOG: `application.log` shows 6 events (INFO 3, WARN 1, ERROR 1, UNKNOWN 1), the ERROR owns
+      lines 4–6 with a collapsed stack, and the INFO that mentions `ERROR` stays INFO
+- [ ] LOG: level, source and text filters update the counters
+- [ ] XML: `calibration.xml` keeps the namespace, both `channel` elements, the comment, CDATA and the
+      mixed-content order; `invalid.xml` shows a position and keeps the source
+- [ ] Save As offers the filter of the current format; saving under another extension switches the
+      viewer and keeps the text unchanged
+- [ ] Explorer and the tab bar show a different icon per format
+- [ ] Windows Explorer shows a per-format icon for each association, and "Open with" lists the app for
+      all five formats
+- [ ] Uninstall removes the five ProgIDs without changing another application's defaults
+
 ---
 
 ## 5. Security spot checks (spec §22, §32)
