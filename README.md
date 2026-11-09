@@ -18,6 +18,10 @@ native file associations on Windows, Linux and macOS
 [![Tests](https://img.shields.io/badge/tests-350%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
+**0.3.0** adds structured viewers for JSON, CSV, LOG and XML, the DaVinci diagram palette with
+fit/fullscreen/export controls, and a per-format icon and file association on every platform —
+[release notes](docs/releases/v0.3.0.md).
+
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
 </div>
