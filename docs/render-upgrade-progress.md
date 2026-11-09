@@ -15,7 +15,7 @@ modules are written against.
 | R4 | CSV: dialects, quoted/multiline cells, table view | done |
 | R5 | LOG: profiles, levels, stack traces, filters | done |
 | R6 | Icons and OS integration: sizes, UI, Windows associations | done |
-| R7 | Final matrix, export, offline, regressions, release | in progress |
+| R7 | Final matrix, export, offline, regressions, release | done |
 
 ## Baseline (R0)
 
