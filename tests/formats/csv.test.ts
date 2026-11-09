@@ -1,13 +1,10 @@
 /**
  * CSV parser and table-view tests.
  *
- * The kit examples in `DaVinci_Render_Kit/examples` are the acceptance
- * fixtures, so they are read relative to the repository root rather than
- * duplicated into `tests/fixtures`.
+ * The acceptance fixtures are byte-exact copies of the files in
+ * `DaVinci_Render_Kit/examples`; the kit itself lives outside the repository, so
+ * the tests must not depend on it being present (CI has no copy).
  */
-
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -19,10 +16,29 @@ import { detectDelimiter, parseCsv, type CsvTable } from "@/formats/csv/parse";
 import { computeWindow, filterRecords, sortRecords, viewRecords } from "@/formats/csv/table";
 import { t } from "@/shared/i18n";
 
-const EXAMPLES = fileURLToPath(new URL("../../../DaVinci_Render_Kit/examples/", import.meta.url));
+/** `telemetry.csv`: CRLF outside, one LF inside a quoted cell. */
+const TELEMETRY_CSV =
+  "id,rpm,load,note,enabled\r\n" +
+  '001,1000,18,"Холостой ход",true\r\n' +
+  '002,2500,45,"Нагрузка, частичная",true\r\n' +
+  '003,4000,80,"Первая строка\nВторая строка",false\r\n';
+
+/** `semicolon.csv`: `;` delimiter, decimal comma, escaped quotes, empty tail. */
+const SEMICOLON_CSV = 'id;value;note\n001;1,25;"Кавычки ""внутри"""\n002;;\n';
+
+/** `ragged.csv`: header of three columns, rows of two and four. */
+const RAGGED_CSV = "a,b,c\n1,2\n3,4,5,6\n";
+
+const EXAMPLES: Record<string, string> = {
+  "telemetry.csv": TELEMETRY_CSV,
+  "semicolon.csv": SEMICOLON_CSV,
+  "ragged.csv": RAGGED_CSV,
+};
 
 function example(name: string): string {
-  return readFileSync(`${EXAMPLES}${name}`, "utf8");
+  const source = EXAMPLES[name];
+  if (source === undefined) throw new Error(`unknown example: ${name}`);
+  return source;
 }
 
 function modelOf(source: string): CsvTable {
