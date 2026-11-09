@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DaVinci render lab — Mermaid</title>
+    <style>
+      /* Lab chrome only; the preview itself is styled by src/styles/markdown.css. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: "Segoe UI", "Noto Sans", sans-serif;
+        background: #0b1220;
+        color: #e5edf7;
+      }
+      #render-lab,
+      .render-lab {
+        min-height: 100%;
+      }
+      .render-lab {
+        display: flex;
+        align-items: stretch;
+      }
+      .render-lab__panel {
+        width: 420px;
+        flex: 0 0 420px;
+        padding: 16px;
+        box-sizing: border-box;
+        border-right: 1px solid #24344d;
+        background: #0f172a;
+        overflow: auto;
+        max-height: 100vh;
+        position: sticky;
+        top: 0;
+        font-size: 13px;
+      }
+      .render-lab__panel h1 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .render-lab__panel h2 {
+        margin: 20px 0 8px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #93a4bd;
+      }
+      .render-lab__hint,
+      .render-lab__status {
+        margin: 0 0 12px;
+        color: #9fb0c9;
+        line-height: 1.45;
+      }
+      .render-lab__row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .render-lab__row button {
+        flex: 1;
+        font: inherit;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #2f4463;
+        background: #16233a;
+        color: #e5edf7;
+        cursor: pointer;
+      }
+      .render-lab__row button:hover {
+        border-color: #5b8def;
+        background: #1d2f4d;
+      }
+      .render-lab__report {
+        margin: 0;
+        padding: 10px;
+        background: #08101d;
+        border: 1px solid #24344d;
+        border-radius: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 46vh;
+        overflow: auto;
+      }
+      .render-lab__canvas {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 24px;
+      }
+      .render-lab__body {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+        border-radius: 8px;
+      }
+      .render-lab__body.markdown-body--dark {
+        background: #0d1117;
+      }
+      .render-lab__body.markdown-body--light {
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="render-lab"></div>
+    <script type="module" src="./renderLab.tsx"></script>
+  </body>
+</html>

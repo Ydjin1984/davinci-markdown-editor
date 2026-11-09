@@ -1,39 +1,73 @@
-/** Starter diagrams offered by Insert → Diagram. */
+/**
+ * Starter diagrams offered by Insert → Diagram.
+ *
+ * These snippets are *document content*, so their labels are written in Russian
+ * (the same language as the rest of the sample document). Only the UI label of
+ * the menu entry goes through `t()` — see `labelKey`.
+ *
+ * The flowchart carries the semantic roles from the palette: Mermaid cannot know
+ * that a rhombus is a condition or that a cylinder is data, so the template says
+ * it with `classDef`/`:::role`. The colours here are the dark DaVinci palette;
+ * they are self-contained (each shape is dark, its text is light), so the
+ * contrast survives in either application appearance and the author can edit
+ * them freely.
+ */
+
+import { t, type StringKey } from "@/shared/i18n";
+import { templateClassDefs } from "./theme";
 
 export interface DiagramTemplate {
   id: string;
-  label: string;
+  /** Translation key for the Insert → Diagram menu entry. */
+  labelKey: StringKey;
+  /**
+   * Resolved menu label.
+   *
+   * Kept as a getter rather than a plain string so a language switch is picked
+   * up the next time the menu is built, without changing the call sites that
+   * already read `template.label`.
+   */
+  readonly label: string;
   /** Language used for the syntax of the snippet, shown in the insert menu. */
   hint: string;
   source: string;
 }
 
-export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
+const FLOWCHART_SOURCE = `flowchart TD
+    A["Открыть документ"]:::action --> B{"Формат корректен?"}:::condition
+    B -->|Да| C["Построить представление"]:::action
+    B -->|Нет| D["Показать ошибку и исходник"]:::error
+    C --> E[("Модель документа")]:::data
+    E --> F(["Готово к просмотру"]):::success
+${templateClassDefs("dark")}`;
+
+interface TemplateSeed {
+  id: string;
+  hint: string;
+  source: string;
+}
+
+const SEEDS: TemplateSeed[] = [
   {
     id: "flowchart",
-    label: "Flowchart",
     hint: "flowchart",
-    source: `flowchart LR
-    Client --> API
-    API --> Database`,
+    source: FLOWCHART_SOURCE,
   },
   {
     id: "sequence",
-    label: "Sequence Diagram",
     hint: "sequenceDiagram",
     source: `sequenceDiagram
-    participant User
-    participant Editor
-    participant Disk
-    User->>Editor: Type a character
-    Editor->>Editor: Update preview
-    User->>Editor: Ctrl+S
-    Editor->>Disk: Write file
-    Disk-->>Editor: OK`,
+    participant U as Пользователь
+    participant E as Редактор
+    participant D as Диск
+    U->>E: Изменить документ
+    E->>E: Обновить просмотр
+    U->>E: Сохранить
+    E->>D: Записать файл
+    D-->>E: Готово`,
   },
   {
     id: "class",
-    label: "Class Diagram",
     hint: "classDiagram",
     source: `classDiagram
     class Document {
@@ -45,96 +79,115 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
         +open(path) Document
         +render() string
     }
-    Editor --> Document : manages`,
+    Editor --> Document : управляет`,
   },
   {
     id: "state",
-    label: "State Diagram",
     hint: "stateDiagram-v2",
     source: `stateDiagram-v2
     [*] --> Clean
-    Clean --> Dirty : edit
-    Dirty --> Saved : save
-    Saved --> Clean
-    Dirty --> [*] : discard`,
+    Clean --> Dirty : изменить
+    Dirty --> Valid : разобрать
+    Dirty --> Invalid : ошибка
+    Invalid --> Dirty : исправить
+    Valid --> Clean : сохранить`,
   },
   {
     id: "er",
-    label: "Entity Relationship",
     hint: "erDiagram",
     source: `erDiagram
-    DOCUMENT ||--o{ REVISION : has
+    DOCUMENT ||--o{ REVISION : содержит
+    DOCUMENT ||--o{ DIAGNOSTIC : имеет
     DOCUMENT {
         string path
-        string encoding
+        string kind
     }
     REVISION {
-        int id
-        datetime created_at
+        int number
+        string source
+    }
+    DIAGNOSTIC {
+        int line
+        string message
     }`,
   },
   {
     id: "gantt",
-    label: "Gantt",
     hint: "gantt",
     source: `gantt
-    title Release plan
+    title План выпуска
     dateFormat YYYY-MM-DD
-    section Core
-    Markdown engine   :done,    a1, 2026-01-06, 10d
-    Mermaid support   :active,  a2, after a1, 7d
-    section Packaging
-    Windows installer :         a3, after a2, 5d
-    Linux packages    :         a4, after a3, 5d`,
+    section Ядро
+    Движок Markdown   :done,    a1, 2026-01-06, 10d
+    Поддержка Mermaid :active,  a2, after a1, 7d
+    section Сборка
+    Установщик Windows :        a3, after a2, 5d
+    Пакеты Linux       :        a4, after a3, 5d`,
   },
   {
     id: "gitgraph",
-    label: "Git Graph",
     hint: "gitGraph",
     source: `gitGraph
-    commit id: "init"
+    commit id: "основа"
     branch feature/editor
-    commit id: "codemirror"
-    commit id: "preview"
+    commit id: "редактор"
+    commit id: "просмотр"
     checkout main
     merge feature/editor
-    commit id: "release"`,
+    commit id: "выпуск"`,
   },
   {
     id: "mindmap",
-    label: "Mindmap",
     hint: "mindmap",
     source: `mindmap
   root((DaVinci))
-    Editor
-      CodeMirror
-      Keybindings
-    Preview
-      GFM
-      Mermaid
-      KaTeX`,
+    Документы
+      Markdown
+      JSON
+      XML
+    Данные
+      CSV
+      LOG
+    Качество
+      Цвет
+      Экспорт`,
   },
   {
     id: "timeline",
-    label: "Timeline",
     hint: "timeline",
     source: `timeline
-    title Roadmap
-    2026 Q1 : Markdown engine
-            : Mermaid
-    2026 Q2 : Packaging
-            : OS integration`,
+    title Этапы
+    Аудит : Исходники : Примеры
+    Рендер : Палитра : Геометрия
+    Форматы : Дерево : Таблица : События
+    Выпуск : Тесты : Иконки`,
   },
   {
     id: "pie",
-    label: "Pie Chart",
     hint: "pie",
-    source: `pie title Supported platforms
-    "Windows" : 45
-    "Linux" : 45
-    "macOS" : 10`,
+    source: `pie title Учебный набор документов
+    "Markdown" : 30
+    "JSON" : 25
+    "CSV" : 20
+    "LOG" : 15
+    "XML" : 10`,
   },
 ];
+
+function withLabel(seed: TemplateSeed): DiagramTemplate {
+  const labelKey = `insert.diagram.${seed.id}` as StringKey;
+  return {
+    id: seed.id,
+    hint: seed.hint,
+    source: seed.source,
+    labelKey,
+    get label(): string {
+      return t(labelKey);
+    },
+  };
+}
+
+export const DIAGRAM_TEMPLATES: DiagramTemplate[] = SEEDS.map(withLabel);
 
 export function fencedDiagram(template: DiagramTemplate): string {
   return `\`\`\`mermaid\n${template.source}\n\`\`\`\n`;

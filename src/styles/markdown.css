@@ -340,34 +340,76 @@
 .markdown-body .md-diagram-tools {
   display: flex;
   gap: 2px;
+  align-items: center;
   justify-content: flex-end;
   padding: 4px 6px;
   border-bottom: 1px solid var(--md-border-muted);
 }
 
+/* The active mode is the only thing the toolbar has to communicate. */
+.markdown-body .md-diagram[data-diagram-mode="fit"] .md-diagram-tools [data-diagram-action="fit"],
+.markdown-body
+  .md-diagram[data-diagram-mode="manual"][data-diagram-zoom="1"]
+  .md-diagram-tools
+  [data-diagram-action="reset"] {
+  color: var(--md-fg);
+  border-color: var(--md-border);
+  background: var(--md-bg);
+}
+
 .markdown-body .md-diagram-stage {
+  /* 12px top and bottom, so the diagram always keeps ≥24px of breathing room. */
   padding: 12px;
   overflow: auto;
   max-height: 70vh;
 }
 
+/*
+ * Scaling lives in the SVG's width/height attributes, set by `hydrate.ts`.
+ * A `max-width` here would be a second, independent scale: at 200% the browser
+ * would shrink the enlarged SVG back to the pane width and the zoom would look
+ * like nothing happened. The same applies to `height: auto`.
+ */
 .markdown-body .md-diagram-viewport {
-  overflow: auto;
+  overflow: visible;
   max-width: 100%;
 }
 
 .markdown-body .md-diagram-viewport svg {
-  max-width: 100%;
-  height: auto;
   display: block;
+  max-width: none;
 }
 
 .markdown-body .md-diagram-canvas {
   margin: 0 auto;
 }
 
+.markdown-body .md-diagram[data-diagram-mode="manual"] .md-diagram-canvas {
+  margin: 0;
+}
+
 .markdown-body .md-diagram[data-diagram-state="pending"] .md-diagram-stage {
   min-height: 60px;
+}
+
+/* Fullscreen diagram: an overlay owned by the preview, no Fullscreen API. */
+.markdown-body .md-diagram.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  margin: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-bg);
+}
+.markdown-body .md-diagram.is-fullscreen .md-diagram-stage {
+  flex: 1;
+  max-height: none;
+  height: 100%;
+}
+.markdown-body .md-diagram.is-fullscreen .md-diagram-viewport {
+  height: 100%;
 }
 
 .markdown-body .md-diagram-source {

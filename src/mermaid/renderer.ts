@@ -1,29 +1,53 @@
 /**
  * Mermaid diagram rendering for the preview.
  *
- * Three properties this module has to guarantee:
+ * Four properties this module has to guarantee:
  *
  * 1. **A broken diagram never breaks the document.** Each block is rendered in
  *    isolation; a failure becomes an error card and the rest of the preview is
  *    untouched.
- * 2. **A stale asynchronous render never overwrites a newer one.** Every pass
- *    takes a generation number and re-checks it before touching the DOM.
+ * 2. **A stale asynchronous render never overwrites a newer one.** Every render
+ *    takes an abort signal and a generation number; a cancelled task refuses to
+ *    hand back its SVG.
  * 3. **Unchanged diagrams are not re-rendered on every keystroke.** Results are
- *    cached by (theme, source), so typing elsewhere in the document costs
- *    nothing for the diagrams already on screen.
+ *    cached by a key that covers every input Mermaid actually reads: the source,
+ *    the effective theme, the appearance, the palette version, the layout
+ *    options and the renderer version.
+ * 4. **Mermaid's global configuration is never mutated mid-render.** A single
+ *    serial queue owns the `initialize` + `render` pair.
  */
 
+import type { MermaidConfig } from "mermaid";
+
 import type { MermaidTheme } from "@/shared/types";
+import { DiagramTaskAbortedError, diagramQueue, isDiagramAbort } from "./queue";
+import { PALETTE_VERSION, davinciTheme, type Appearance } from "./theme";
 
 type MermaidApi = typeof import("mermaid").default;
 
 export interface DiagramRenderOptions {
-  appearance: "light" | "dark";
+  appearance: Appearance;
   theme: MermaidTheme;
 }
 
+/** Bumped when rendering logic changes in a way that changes the SVG. */
+export const RENDER_VERSION = "render-2";
+
+/**
+ * Layout options that change the SVG. They are part of the cache key, so adding
+ * one here can never reuse an SVG produced with different geometry.
+ */
+const LAYOUT_VERSION = "layout-1";
+const LAYOUT_OPTIONS = {
+  htmlLabels: false,
+  useMaxWidth: false,
+} as const;
+
 const CACHE_LIMIT = 80;
 const RENDER_TIMEOUT_MS = 15_000;
+
+const FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 
 const cache = new Map<string, string>();
 
@@ -31,8 +55,32 @@ let mermaidPromise: Promise<MermaidApi> | null = null;
 let initialisedKey: string | null = null;
 let renderCounter = 0;
 
-function cacheKey(source: string, theme: string): string {
-  return `${theme}\u0000${source}`;
+/** Resolve the effective Mermaid theme for the current appearance. */
+export function effectiveMermaidTheme(appearance: Appearance, theme: MermaidTheme): string {
+  // The theme *name* does not depend on the appearance — DaVinci is one palette
+  // whose colours are swapped through `themeVariables` — but the appearance is
+  // still part of the signature because it is part of the cache key.
+  void appearance;
+  // `auto` means "follow the app", and the app's palette is DaVinci.
+  if (theme === "auto") return "davinci";
+  return theme;
+}
+
+/**
+ * Cache key: every input that can change the produced SVG.
+ *
+ * Exported because the tests assert that the appearance and the palette version
+ * are part of the key — a stale colour after a theme switch is exactly the bug
+ * this key exists to prevent.
+ */
+export function diagramCacheKey(source: string, options: DiagramRenderOptions): string {
+  const theme = effectiveMermaidTheme(options.appearance, options.theme);
+  return [RENDER_VERSION, PALETTE_VERSION, LAYOUT_VERSION, options.appearance, theme, source].join("\u0000");
+}
+
+function initialisationKey(options: DiagramRenderOptions): string {
+  const theme = effectiveMermaidTheme(options.appearance, options.theme);
+  return [PALETTE_VERSION, LAYOUT_VERSION, options.appearance, theme].join("|");
 }
 
 function cacheGet(key: string): string | undefined {
@@ -58,54 +106,64 @@ export function clearDiagramCache(): void {
   cache.clear();
 }
 
-/** Resolve the effective Mermaid theme for the current appearance. */
-export function effectiveMermaidTheme(appearance: "light" | "dark", theme: MermaidTheme): string {
-  if (theme !== "auto") return theme;
-  return appearance === "dark" ? "dark" : "default";
+async function loadMermaid(): Promise<MermaidApi> {
+  mermaidPromise ??= import("mermaid").then((module) => module.default);
+  return mermaidPromise;
 }
 
-async function getMermaid(options: DiagramRenderOptions): Promise<MermaidApi> {
-  mermaidPromise ??= import("mermaid").then((module) => module.default);
-  const mermaid = await mermaidPromise;
-
+/** Build the Mermaid configuration for one appearance/theme pair. */
+export function mermaidConfig(options: DiagramRenderOptions): MermaidConfig {
   const theme = effectiveMermaidTheme(options.appearance, options.theme);
-  const key = `${theme}|${options.appearance}`;
 
-  if (initialisedKey !== key) {
-    mermaid.initialize({
-      startOnLoad: false,
-      // Mermaid sanitises its own output and refuses `click` handlers that
-      // would run script, so a document cannot turn a diagram into code.
-      securityLevel: "strict",
-      // Prevents Mermaid from injecting its own error graphic into the page;
-      // we render our own card that keeps the source visible.
-      suppressErrorRendering: true,
-      theme: theme as never,
-      // Labels as SVG <text> rather than <foreignObject>, so an exported SVG
-      // opens correctly in viewers that do not embed HTML.
-      htmlLabels: false,
-      flowchart: { htmlLabels: false, useMaxWidth: true },
-      class: { htmlLabels: false },
-      sequence: { useMaxWidth: true },
-      gantt: { useMaxWidth: true },
-      er: { useMaxWidth: true },
-      journey: { useMaxWidth: true },
-      gitGraph: { useMaxWidth: true },
-      pie: { useMaxWidth: true },
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif',
-    });
-    initialisedKey = key;
+  const config: MermaidConfig = {
+    startOnLoad: false,
+    // Mermaid sanitises its own output and refuses `click` handlers that would
+    // run script, so a document cannot turn a diagram into code.
+    securityLevel: "strict",
+    // Prevents Mermaid from injecting its own error graphic into the page; we
+    // render our own card that keeps the source visible.
+    suppressErrorRendering: true,
+    // Labels as SVG <text> rather than <foreignObject>, so an exported SVG
+    // opens correctly in viewers that do not embed HTML.
+    htmlLabels: LAYOUT_OPTIONS.htmlLabels,
+    fontFamily: FONT_FAMILY,
+    flowchart: { htmlLabels: false, useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    sequence: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    gantt: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    er: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    journey: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    gitGraph: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    pie: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+  };
+
+  if (theme === "davinci") {
+    // `base` is the only theme that accepts a full variable set; the DaVinci
+    // palette is injected through it plus a narrow `themeCSS` that only repairs
+    // label backgrounds.
+    const davinci = davinciTheme(options.appearance);
+    config.theme = "base";
+    config.themeVariables = davinci.themeVariables;
+    config.themeCSS = davinci.themeCSS;
+  } else {
+    config.theme = theme as MermaidConfig["theme"];
   }
 
-  return mermaid;
+  return config;
 }
 
-interface RenderSuccess {
+function ensureInitialised(mermaid: MermaidApi, options: DiagramRenderOptions): void {
+  const key = initialisationKey(options);
+  if (initialisedKey === key) return;
+  mermaid.initialize(mermaidConfig(options));
+  initialisedKey = key;
+}
+
+export interface RenderSuccess {
   ok: true;
   svg: string;
 }
 
-interface RenderFailure {
+export interface RenderFailure {
   ok: false;
   message: string;
   line: number | null;
@@ -118,8 +176,11 @@ function nextRenderId(): string {
   return `davinci-mermaid-${Date.now().toString(36)}-${renderCounter}`;
 }
 
-/** Strip anything that would make the SVG unsafe or non-portable. */
-function sanitiseSvg(svg: string): string {
+/**
+ * Cheap string-level guard, kept as defence in depth in front of the DOM
+ * sanitiser in `svg.ts`. It must not touch `<style>`: the palette lives there.
+ */
+function stripUnsafeMarkup(svg: string): string {
   return svg
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
@@ -161,28 +222,49 @@ async function renderWithTimeout(mermaid: MermaidApi, id: string, source: string
   } finally {
     if (timer !== undefined) clearTimeout(timer);
     // Mermaid measures the diagram using a temporary element; make sure a
-    // failed render does not leave it behind.
+    // failed render does not leave it behind, including after a timeout that
+    // Mermaid itself ignored.
     document.getElementById(id)?.remove();
     document.getElementById(`d${id}`)?.remove();
   }
 }
 
-/** Render one Mermaid source to SVG, using the cache when possible. */
-export async function renderDiagram(source: string, options: DiagramRenderOptions): Promise<RenderResult> {
-  const theme = effectiveMermaidTheme(options.appearance, options.theme);
-  const key = cacheKey(source, theme);
+/**
+ * Render one Mermaid source to SVG, using the cache when possible.
+ *
+ * The `initialize` + `render` pair runs as a single queued task. If `signal`
+ * aborts while the task is queued or running the returned promise rejects with
+ * `DiagramTaskAbortedError`, so a late SVG can never be published.
+ */
+export async function renderDiagram(
+  source: string,
+  options: DiagramRenderOptions,
+  signal?: AbortSignal,
+): Promise<RenderResult> {
+  const key = diagramCacheKey(source, options);
 
-  const cached = cacheGet(key);
-  if (cached !== undefined) {
-    return { ok: true, svg: cached };
+  if (!signal?.aborted) {
+    const cached = cacheGet(key);
+    if (cached !== undefined) {
+      return { ok: true, svg: cached };
+    }
   }
 
   try {
-    const mermaid = await getMermaid(options);
-    const svg = sanitiseSvg(await renderWithTimeout(mermaid, nextRenderId(), source));
+    const svg = stripUnsafeMarkup(
+      await diagramQueue.enqueue(async () => {
+        const mermaid = await loadMermaid();
+        ensureInitialised(mermaid, options);
+        return renderWithTimeout(mermaid, nextRenderId(), source);
+      }, signal),
+    );
+
+    if (signal?.aborted) throw new DiagramTaskAbortedError();
+
     cacheSet(key, svg);
     return { ok: true, svg };
   } catch (error) {
+    if (isDiagramAbort(error)) throw error;
     const message = describeError(error);
     return { ok: false, message, line: extractLine(message) };
   }
@@ -190,5 +272,8 @@ export async function renderDiagram(source: string, options: DiagramRenderOption
 
 /** Cached SVG for a source, if a previous render produced one. */
 export function cachedDiagram(source: string, options: DiagramRenderOptions): string | undefined {
-  return cacheGet(cacheKey(source, effectiveMermaidTheme(options.appearance, options.theme)));
+  return cacheGet(diagramCacheKey(source, options));
 }
+
+/** Re-exported so callers do not need to import the queue module separately. */
+export { isDiagramAbort };
