@@ -50,6 +50,7 @@ beforeEach(() => {
         id: "doc-1",
         path: null,
         title: "Untitled",
+        kind: "markdown",
         content: "# hi",
         savedContent: "",
         encoding: "UTF-8",

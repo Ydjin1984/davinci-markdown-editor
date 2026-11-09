@@ -19,11 +19,14 @@ import {
   typographyExtensions,
   type EditorCompartments,
 } from "./codemirror/setup";
+import { languageExtensions } from "./codemirror/languages";
 import { setActiveEditor } from "./editorApi";
 import { useCursorStore } from "./cursorStore";
 import { useDocumentsStore } from "@/tabs/documentsStore";
 import { useSettingsStore } from "@/settings/settingsStore";
 import { useUiStore } from "@/app/uiStore";
+import { descriptorFor } from "@/documents/registry";
+import type { DocumentKind, EditorLanguage } from "@/documents/types";
 import { t } from "@/shared/i18n";
 import { cx } from "@/shared/util";
 
@@ -99,7 +102,7 @@ export function EditorPane({ onTogglePreview }: EditorPaneProps) {
     });
   }
 
-  function buildExtensions(): ReturnType<typeof createEditorExtensions> {
+  function buildExtensions(language: EditorLanguage = "markdown"): ReturnType<typeof createEditorExtensions> {
     const compartments = compartmentsRef.current;
     if (!compartments) throw new Error("editor compartments are not ready");
     return createEditorExtensions({
@@ -107,6 +110,7 @@ export function EditorPane({ onTogglePreview }: EditorPaneProps) {
       appearance: live.current.appearance,
       readOnly: false,
       compartments,
+      language,
       callbacks: {
         onOpenSearch: () => undefined,
         onTogglePreview: () => live.current.onTogglePreview(),
@@ -160,9 +164,10 @@ export function EditorPane({ onTogglePreview }: EditorPaneProps) {
     const record = useDocumentsStore.getState().documents.find((item) => item.id === activeId);
     if (!record) return;
 
+    const language = descriptorFor(record.kind as DocumentKind).editorLanguage;
     const next =
       parkedStates.current.get(activeId) ??
-      EditorState.create({ doc: record.content, extensions: buildExtensions() });
+      EditorState.create({ doc: record.content, extensions: buildExtensions(language) });
 
     view.setState(next);
 
@@ -174,6 +179,7 @@ export function EditorPane({ onTogglePreview }: EditorPaneProps) {
         compartments.layout.reconfigure(layoutExtensions(live.current.editorSettings)),
         compartments.typography.reconfigure(typographyExtensions(live.current.editorSettings)),
         compartments.readOnly.reconfigure(readOnlyExtensions(record.readOnly)),
+        compartments.language.reconfigure(languageExtensions(language)),
       ],
     });
 
@@ -213,9 +219,14 @@ export function EditorPane({ onTogglePreview }: EditorPaneProps) {
         compartments.layout.reconfigure(layoutExtensions(editorSettings)),
         compartments.typography.reconfigure(typographyExtensions(editorSettings)),
         compartments.readOnly.reconfigure(readOnlyExtensions(document?.readOnly ?? false)),
+        compartments.language.reconfigure(
+          languageExtensions(
+            descriptorFor((document?.kind as DocumentKind | undefined) ?? "markdown").editorLanguage,
+          ),
+        ),
       ],
     });
-  }, [appearance, editorSettings, document?.readOnly]);
+  }, [appearance, editorSettings, document?.readOnly, document?.kind]);
 
   // Drop parked state for documents that are no longer open.
   useEffect(() => {

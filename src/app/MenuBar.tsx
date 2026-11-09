@@ -31,6 +31,7 @@ import {
   toggleHorizontalRule,
 } from "@/editor/codemirror/commands";
 import { DIAGRAM_TEMPLATES, fencedDiagram } from "@/mermaid/templates";
+import { DOCUMENT_TYPES } from "@/documents/registry";
 import { copyHtml, exportHtml, printDocument } from "@/preview/exportActions";
 import { copyText } from "@/shared/clipboard";
 import type { LayoutMode } from "@/shared/types";
@@ -140,15 +141,21 @@ export function MenuBar() {
     const documents = useDocumentsStore.getState().documents;
     const recentFiles = settings.files.recentFiles;
     const recentWorkspaces = settings.files.recentWorkspaces;
+    // Formatting, insertion and export are Markdown features. A JSON or CSV
+    // document keeps the text commands and the file commands, nothing more.
+    const markdown = activeDocument?.kind === "markdown";
 
     return {
       [t("menu.file")]: [
         {
           label: t("file.new"),
           shortcut: `${mod}+N`,
-          run: () => {
-            useDocumentsStore.getState().createUntitled();
-          },
+          items: DOCUMENT_TYPES.map((descriptor) => ({
+            label: t(descriptor.labelKey),
+            run: () => {
+              useDocumentsStore.getState().createUntitled("", descriptor.kind);
+            },
+          })),
         },
         { label: t("file.open"), shortcut: `${mod}+O`, run: run(openFiles) },
         {
@@ -306,43 +313,59 @@ export function MenuBar() {
         {
           label: t("insert.link"),
           shortcut: `${mod}+K`,
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           run: () => runEditorCommand(insertLink),
         },
         {
           label: t("insert.image"),
           shortcut: `${mod}+Shift+K`,
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           run: () => runEditorCommand(insertImageCommand),
         },
         { separator: true },
-        { label: "Heading 1", run: () => runEditorCommand(setHeading(1)) },
-        { label: "Heading 2", run: () => runEditorCommand(setHeading(2)) },
-        { label: "Heading 3", run: () => runEditorCommand(setHeading(3)) },
+        {
+          label: "Heading 1",
+          disabled: !activeDocument || !markdown,
+          run: () => runEditorCommand(setHeading(1)),
+        },
+        {
+          label: "Heading 2",
+          disabled: !activeDocument || !markdown,
+          run: () => runEditorCommand(setHeading(2)),
+        },
+        {
+          label: "Heading 3",
+          disabled: !activeDocument || !markdown,
+          run: () => runEditorCommand(setHeading(3)),
+        },
         { separator: true },
-        { label: t("insert.table"), disabled: !activeDocument, run: () => insertTable() },
-        { label: t("insert.codeBlock"), disabled: !activeDocument, run: () => insertCodeBlock() },
+        { label: t("insert.table"), disabled: !activeDocument || !markdown, run: () => insertTable() },
+        {
+          label: t("insert.codeBlock"),
+          disabled: !activeDocument || !markdown,
+          run: () => insertCodeBlock(),
+        },
         {
           label: t("insert.taskList"),
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           run: () => runEditorCommand(toggleTaskList),
         },
         {
           label: t("insert.blockquote"),
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           run: () => runEditorCommand(toggleBlockquote),
         },
         {
           label: t("insert.horizontalRule"),
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           run: () => runEditorCommand(toggleHorizontalRule),
         },
         { separator: true },
         {
           label: t("insert.diagram"),
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           items: DIAGRAM_TEMPLATES.map((template) => ({
-            label: template.label,
+            label: t(template.labelKey),
             run: () => insertText(fencedDiagram(template)),
           })),
         },
@@ -359,7 +382,7 @@ export function MenuBar() {
         { separator: true },
         {
           label: t("tools.exportGroup"),
-          disabled: !activeDocument,
+          disabled: !activeDocument || !markdown,
           items: [
             { label: t("tools.exportPdf"), shortcut: `${mod}+P`, run: run(printDocument) },
             { label: t("tools.exportHtml"), shortcut: `${mod}+Shift+E`, run: run(exportHtml) },

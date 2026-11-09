@@ -84,6 +84,37 @@ export function goToLine(line: number): boolean {
   return true;
 }
 
+/** Place the caret at a 1-based line and column, clamped to the line. */
+export function goToPosition(line: number, column = 1): boolean {
+  const view = activeEditor();
+  if (!view) return false;
+  const clampedLine = Math.min(Math.max(line, 1), view.state.doc.lines);
+  const textLine = view.state.doc.line(clampedLine);
+  const offset = Math.min(textLine.from + Math.max(column - 1, 0), textLine.to);
+  view.dispatch({ selection: EditorSelection.cursor(offset), scrollIntoView: true });
+  view.focus();
+  return true;
+}
+
+/**
+ * Replace the whole buffer as a single undoable edit.
+ *
+ * Only an explicit user command uses this; the raw text remains the source of
+ * truth and the same save path writes it back untouched.
+ */
+export function replaceDocumentText(text: string): boolean {
+  const view = activeEditor();
+  if (!view) return false;
+  if (view.state.doc.toString() === text) return true;
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: text },
+    selection: EditorSelection.cursor(0),
+    scrollIntoView: true,
+  });
+  view.focus();
+  return true;
+}
+
 /** Scroll the editor so the given line sits at the top of the viewport. */
 export function scrollToLineTop(line: number): void {
   const view = activeEditor();

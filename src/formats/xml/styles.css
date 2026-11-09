@@ -1,0 +1,109 @@
+/**
+ * XML viewer styles.
+ *
+ * Only the classes the XML tree adds on top of the shared viewer chrome live
+ * here; the frame, mode switch, diagnostics and source view are shared.
+ */
+
+.xml-tree {
+  font-family: var(--font-mono);
+}
+
+.xml-row {
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.xml-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-subtle);
+}
+
+/* --- node labels -------------------------------------------------------- */
+
+.xml-element-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.xml-namespace {
+  color: var(--fg-subtle);
+  font-size: 11px;
+}
+
+.xml-punctuation {
+  color: var(--fg-subtle);
+}
+
+.xml-attribute {
+  display: inline-flex;
+  margin-left: 4px;
+}
+
+.xml-attribute-name {
+  color: var(--warning);
+}
+
+.xml-attribute-value {
+  color: var(--success);
+}
+
+.xml-kind {
+  color: var(--fg-subtle);
+}
+
+.xml-text {
+  color: var(--fg-default);
+}
+
+.xml-cdata {
+  color: var(--success);
+}
+
+.xml-comment {
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.xml-doctype {
+  color: var(--fg-muted);
+}
+
+/* --- notices and the parse-error fallback -------------------------------- */
+
+.xml-note {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.xml-body.is-stale {
+  opacity: 0.55;
+  transition: opacity 120ms ease-in;
+}
+
+.xml-fallback {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.xml-fallback .format-viewer-message {
+  flex: none;
+}
+
+.xml-fallback-source {
+  flex: 1;
+  min-height: 0;
+}
+
+.xml-fallback-detail {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

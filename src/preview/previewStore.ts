@@ -18,6 +18,8 @@ interface PreviewState {
   /** True while the diagrams in the current output are still being drawn. */
   diagramsPending: boolean;
   setRendered: (documentId: string, html: string, outline: OutlineItem[]) => void;
+  /** Structure of a non-Markdown document, published by the shell. */
+  setOutline: (outline: OutlineItem[]) => void;
   setPending: (pending: boolean) => void;
   setDiagramsPending: (pending: boolean) => void;
   clear: () => void;
@@ -31,6 +33,7 @@ export const usePreviewStore = create<PreviewState>((set) => ({
   diagramsPending: false,
 
   setRendered: (documentId, html, outline) => set({ documentId, html, outline, pending: false }),
+  setOutline: (outline) => set({ outline }),
   setPending: (pending) => set({ pending }),
   setDiagramsPending: (diagramsPending) => set({ diagramsPending }),
   clear: () => set({ html: "", outline: [], documentId: null, pending: false, diagramsPending: false }),

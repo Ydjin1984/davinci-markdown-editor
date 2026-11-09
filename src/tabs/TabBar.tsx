@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDocumentsStore } from "./documentsStore";
 import { useUiStore } from "@/app/uiStore";
+import { FileTypeIcon } from "@/shared/FileTypeIcon";
 import * as ipc from "@/shared/ipc";
 import { t } from "@/shared/i18n";
 import { cx } from "@/shared/util";
@@ -94,6 +95,9 @@ export function TabBar() {
             title={document.path ?? document.title}
           >
             {document.external !== "none" && <span className="tab-warning" aria-hidden />}
+            <span className="tab-icon" aria-hidden>
+              <FileTypeIcon kind={document.kind} size={14} />
+            </span>
             <span className="tab-title">{document.title}</span>
             <button
               type="button"

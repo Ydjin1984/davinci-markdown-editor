@@ -21,33 +21,14 @@ import {
 } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { highlightSelectionMatches, searchKeymap, openSearchPanel } from "@codemirror/search";
-import {
-  autocompletion,
-  closeBrackets,
-  closeBracketsKeymap,
-  completionKeymap,
-} from "@codemirror/autocomplete";
+import { closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from "@codemirror/language";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { languages } from "@codemirror/language-data";
 
 import { darkTheme, lightTheme } from "./theme";
-import { markdownCompletionSources } from "./completions";
-import {
-  codeBlock,
-  insertImageCommand,
-  insertLink,
-  setHeading,
-  tableBlock,
-  toggleBlockquote,
-  toggleBold,
-  toggleBulletList,
-  toggleInlineCode,
-  toggleItalic,
-  toggleOrderedList,
-  toggleStrikethrough,
-  toggleTaskList,
-} from "./commands";
+import { languageExtensions } from "./languages";
+import { codeBlock, tableBlock } from "./commands";
+import { t } from "@/shared/i18n";
+import type { EditorLanguage } from "@/documents/types";
 import type { EditorSettings } from "@/shared/types";
 
 export interface EditorCompartments {
@@ -55,6 +36,7 @@ export interface EditorCompartments {
   layout: Compartment;
   typography: Compartment;
   readOnly: Compartment;
+  language: Compartment;
 }
 
 export function createCompartments(): EditorCompartments {
@@ -63,6 +45,7 @@ export function createCompartments(): EditorCompartments {
     layout: new Compartment(),
     typography: new Compartment(),
     readOnly: new Compartment(),
+    language: new Compartment(),
   };
 }
 
@@ -131,37 +114,12 @@ export interface EditorSetupOptions {
   callbacks: EditorCallbacks;
   onDocChanged: () => void;
   onSelectionChanged: () => void;
+  /** Grammar of the document being edited. */
+  language: EditorLanguage;
 }
 
 export function createEditorExtensions(options: EditorSetupOptions): Extension[] {
-  const { settings, appearance, readOnly, compartments, callbacks } = options;
-
-  const markdownKeymap = keymap.of([
-    { key: "Mod-b", run: toggleBold, preventDefault: true },
-    { key: "Mod-i", run: toggleItalic, preventDefault: true },
-    { key: "Mod-e", run: toggleInlineCode, preventDefault: true },
-    { key: "Mod-Shift-x", run: toggleStrikethrough, preventDefault: true },
-    { key: "Mod-k", run: insertLink, preventDefault: true },
-    { key: "Mod-Shift-k", run: insertImageCommand, preventDefault: true },
-    { key: "Mod-Shift-8", run: toggleBulletList, preventDefault: true },
-    { key: "Mod-Shift-7", run: toggleOrderedList, preventDefault: true },
-    { key: "Mod-Shift-9", run: toggleTaskList, preventDefault: true },
-    { key: "Mod-Shift-.", run: toggleBlockquote, preventDefault: true },
-    { key: "Mod-Shift-1", run: setHeading(1), preventDefault: true },
-    { key: "Mod-Shift-2", run: setHeading(2), preventDefault: true },
-    { key: "Mod-Shift-3", run: setHeading(3), preventDefault: true },
-    { key: "Mod-Shift-4", run: setHeading(4), preventDefault: true },
-    { key: "Mod-Shift-0", run: setHeading(0), preventDefault: true },
-    { key: "Mod-h", run: openSearchPanel, preventDefault: true },
-    {
-      key: "Mod-Shift-v",
-      run: () => {
-        callbacks.onTogglePreview();
-        return true;
-      },
-      preventDefault: true,
-    },
-  ]);
+  const { settings, appearance, readOnly, compartments, callbacks, language } = options;
 
   return [
     history(),
@@ -172,14 +130,12 @@ export function createEditorExtensions(options: EditorSetupOptions): Extension[]
     EditorState.allowMultipleSelections.of(true),
     indentOnInput(),
     closeBrackets(),
-    autocompletion({ override: markdownCompletionSources, activateOnTyping: true }),
     bracketMatching(),
     highlightSelectionMatches(),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) options.onDocChanged();
       if (update.selectionSet || update.docChanged) options.onSelectionChanged();
     }),
-    markdownKeymap,
     keymap.of([
       ...closeBracketsKeymap,
       ...defaultKeymap,
@@ -188,19 +144,22 @@ export function createEditorExtensions(options: EditorSetupOptions): Extension[]
       ...foldKeymap,
       ...completionKeymap,
       indentWithTab,
+      { key: "Mod-h", run: openSearchPanel, preventDefault: true },
+      {
+        key: "Mod-Shift-v",
+        run: () => {
+          callbacks.onTogglePreview();
+          return true;
+        },
+        preventDefault: true,
+      },
     ]),
-    markdown({
-      base: markdownLanguage,
-      // Fenced code inside the document is highlighted with the same grammar
-      // set the preview uses, loaded on demand by CodeMirror.
-      codeLanguages: languages,
-      addKeymap: true,
-    }),
-    placeholder("Write Markdown here…"),
+    placeholder(t("editor.placeholder")),
     compartments.appearance.of(appearanceExtensions(appearance)),
     compartments.layout.of(layoutExtensions(settings)),
     compartments.typography.of(typographyExtensions(settings)),
     compartments.readOnly.of(readOnlyExtensions(readOnly)),
+    compartments.language.of(languageExtensions(language)),
   ];
 }
 

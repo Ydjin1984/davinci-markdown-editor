@@ -68,6 +68,16 @@ const STRINGS = {
   "insert.codeBlock": { en: "Code Block", ru: "Блок кода" },
   "insert.taskList": { en: "Task List", ru: "Список задач" },
   "insert.diagram": { en: "Diagram", ru: "Диаграмма" },
+  "insert.diagram.flowchart": { en: "Flowchart", ru: "Блок-схема" },
+  "insert.diagram.sequence": { en: "Sequence Diagram", ru: "Диаграмма последовательности" },
+  "insert.diagram.class": { en: "Class Diagram", ru: "Диаграмма классов" },
+  "insert.diagram.state": { en: "State Diagram", ru: "Диаграмма состояний" },
+  "insert.diagram.er": { en: "Entity Relationship", ru: "Сущности и связи" },
+  "insert.diagram.gantt": { en: "Gantt", ru: "Диаграмма Ганта" },
+  "insert.diagram.gitgraph": { en: "Git Graph", ru: "Git-граф" },
+  "insert.diagram.mindmap": { en: "Mindmap", ru: "Интеллект-карта" },
+  "insert.diagram.timeline": { en: "Timeline", ru: "Хронология" },
+  "insert.diagram.pie": { en: "Pie Chart", ru: "Круговая диаграмма" },
   "insert.blockquote": { en: "Blockquote", ru: "Цитата" },
   "insert.horizontalRule": { en: "Horizontal Rule", ru: "Горизонтальная линия" },
 
@@ -80,6 +90,10 @@ const STRINGS = {
     ru: "Откроется системный диалог печати — выберите в нём «Сохранить как PDF».",
   },
   "tools.exportGroup": { en: "Export", ru: "Экспорт" },
+  "tools.exportMarkdownOnly": {
+    en: "HTML export is available for Markdown documents.",
+    ru: "Экспорт в HTML доступен для документов Markdown.",
+  },
   "tools.revealInExplorer": { en: "Reveal in File Manager", ru: "Показать в проводнике" },
   "tools.wordCount": { en: "Word Count", ru: "Статистика" },
   "tools.assetRoots": { en: "Preview Asset Access…", ru: "Доступ просмотра к файлам…" },
@@ -242,6 +256,10 @@ const STRINGS = {
     ru: "Откройте Markdown-файл, чтобы увидеть просмотр.",
   },
   "editor.noDocument": { en: "No document is open.", ru: "Документ не открыт." },
+  "editor.placeholder": {
+    en: "Start typing…",
+    ru: "Начните вводить текст…",
+  },
   "editor.readOnlyBanner": {
     en: "This file is read-only. Use Save As to keep your changes.",
     ru: "Файл доступен только для чтения. Используйте «Сохранить как».",
@@ -249,6 +267,10 @@ const STRINGS = {
 
   "mermaid.error": { en: "Mermaid render error", ru: "Ошибка отрисовки Mermaid" },
   "mermaid.line": { en: "Line {line}", ru: "Строка {line}" },
+  "mermaid.documentLine": { en: "Markdown line {line}", ru: "Строка Markdown {line}" },
+  "mermaid.copySource": { en: "Copy source", ru: "Копировать исходник" },
+  "mermaid.fullscreen": { en: "Fullscreen", ru: "Во весь экран" },
+  "mermaid.exitFullscreen": { en: "Exit fullscreen", ru: "Выйти из полноэкранного режима" },
   "mermaid.copySvg": { en: "Copy as SVG", ru: "Копировать SVG" },
   "mermaid.exportSvg": { en: "Export as SVG…", ru: "Экспорт в SVG…" },
   "mermaid.zoomIn": { en: "Zoom in", ru: "Увеличить" },
@@ -317,6 +339,7 @@ const STRINGS = {
   "documents.kind.xml": { en: "XML", ru: "XML" },
   "documents.kind.text": { en: "Plain text", ru: "Обычный текст" },
   "documents.interpretAs": { en: "Interpret as", ru: "Читать как" },
+  "documents.looksLike": { en: "Looks like {kind}", ru: "Похоже на {kind}" },
   "documents.unknownHint": {
     en: "The format of this file is not recognised. Pick one to get a structured view.",
     ru: "Формат файла не распознан. Выберите его, чтобы получить структурированный просмотр.",
@@ -346,7 +369,10 @@ const STRINGS = {
   "viewer.noMatches": { en: "No matches", ru: "Совпадений нет" },
   "viewer.expandAll": { en: "Expand all", ru: "Развернуть всё" },
   "viewer.collapseAll": { en: "Collapse all", ru: "Свернуть всё" },
-  "viewer.invalid": { en: "This document cannot be viewed structurally", ru: "Структурированный просмотр невозможен" },
+  "viewer.invalid": {
+    en: "This document cannot be viewed structurally",
+    ru: "Структурированный просмотр невозможен",
+  },
   "viewer.truncated": { en: "The view is truncated", ru: "Представление усечено" },
   "viewer.build": { en: "Build view", ru: "Построить просмотр" },
   "viewer.heavy": {

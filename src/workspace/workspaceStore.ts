@@ -9,7 +9,8 @@ import { create } from "zustand";
 import * as ipc from "@/shared/ipc";
 import { notify } from "@/app/uiStore";
 import { t } from "@/shared/i18n";
-import { basename, dirname, isMarkdownPath } from "@/shared/util";
+import { basename, dirname } from "@/shared/util";
+import { isSupportedDocumentPath } from "@/documents/registry";
 import { settingsSnapshot } from "@/settings/settingsStore";
 import type { DirEntry } from "@/shared/types";
 
@@ -167,13 +168,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 }));
 
-/** Every Markdown file currently visible in the tree, for quick-open style features. */
-export function visibleMarkdownFiles(): string[] {
+/** Every supported document currently visible in the tree. */
+export function visibleDocumentFiles(): string[] {
   const { children } = useWorkspaceStore.getState();
   const files: string[] = [];
   for (const entries of Object.values(children)) {
     for (const entry of entries) {
-      if (!entry.isDir && isMarkdownPath(entry.path)) files.push(entry.path);
+      if (!entry.isDir && isSupportedDocumentPath(entry.path)) files.push(entry.path);
     }
   }
   return files;

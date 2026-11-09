@@ -26,7 +26,7 @@ export const DOCUMENT_TYPES: readonly DocumentTypeDescriptor[] = [
   {
     kind: "json",
     labelKey: "documents.kind.json",
-    extensions: ["json", "jsonc", "geojson", "webmanifest"],
+    extensions: ["json", "geojson", "webmanifest"],
     mime: "application/json",
     editorLanguage: "json",
     modes: ["tree", "source"],
@@ -119,6 +119,11 @@ export function isStructuredPath(path: string): boolean {
 /** Every extension the editor claims, for pickers and documentation. */
 export function supportedExtensions(): string[] {
   return [...BY_EXTENSION.keys()];
+}
+
+/** True when the editor can open this path at all. */
+export function isSupportedDocumentPath(path: string): boolean {
+  return BY_EXTENSION.has(extensionOf(path));
 }
 
 /** Extensions grouped as one filter string for dialog helpers. */

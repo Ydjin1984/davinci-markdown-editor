@@ -72,6 +72,11 @@ function currentDocument(): { title: string; directory: string | null } | null {
   return { title: active.title, directory: documentDirOf(active.path) };
 }
 
+/** True when the active document is Markdown, the only exportable pipeline. */
+function isMarkdownActive(): boolean {
+  return useDocumentsStore.getState().activeDocument()?.kind === "markdown";
+}
+
 /**
  * Open the system print dialog, where the user chooses "save as PDF".
  *
@@ -83,6 +88,12 @@ function currentDocument(): { title: string; directory: string | null } | null {
  */
 export async function printDocument(): Promise<void> {
   if (!currentDocument()) return;
+  // Printing captures the live preview DOM; a structured viewer is not an HTML
+  // document, so there is nothing meaningful to paginate yet.
+  if (!isMarkdownActive()) {
+    notify(t("tools.exportMarkdownOnly"), "info");
+    return;
+  }
 
   const ui = useUiStore.getState();
   ui.setPrinting(true);
@@ -101,6 +112,10 @@ export async function printDocument(): Promise<void> {
 export async function exportHtml(): Promise<void> {
   const document = currentDocument();
   if (!document) return;
+  if (!isMarkdownActive()) {
+    notify(t("tools.exportMarkdownOnly"), "info");
+    return;
+  }
 
   const path = await ipc.pickSavePath(exportFileName(document.title, "html"), "html", null);
   if (!path) return;
@@ -122,6 +137,10 @@ export async function exportHtml(): Promise<void> {
 export async function copyHtml(): Promise<void> {
   const document = currentDocument();
   if (!document) return;
+  if (!isMarkdownActive()) {
+    notify(t("tools.exportMarkdownOnly"), "info");
+    return;
+  }
 
   try {
     const html = await buildExportHtml({

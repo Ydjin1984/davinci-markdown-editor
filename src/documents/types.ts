@@ -8,10 +8,10 @@
 
 import type { ComponentType } from "react";
 
-import type { FileFilterKind, OutlineItem } from "@/shared/types";
+import type { StringKey } from "@/shared/i18n";
+import type { DocumentKind, FileFilterKind, OutlineItem } from "@/shared/types";
 
-/** Every kind of text document the editor understands. */
-export type DocumentKind = "markdown" | "json" | "csv" | "log" | "xml" | "text";
+export type { DocumentKind };
 
 /** CodeMirror grammar used for the source pane. */
 export type EditorLanguage = "markdown" | "json" | "csv" | "log" | "xml" | "text";
@@ -56,7 +56,7 @@ export interface ParseRequest {
 export interface DocumentTypeDescriptor {
   kind: DocumentKind;
   /** i18n key for the human-readable name. */
-  labelKey: string;
+  labelKey: StringKey;
   /** Lower-case extensions without the dot. */
   extensions: string[];
   mime: string;
@@ -78,6 +78,13 @@ export interface ViewerProps {
   appearance: "light" | "dark";
   /** Move the caret in the editor to a 1-based line, optionally a column. */
   onJumpToLine: (line: number, column?: number) => void;
+  /**
+   * Replace the editor buffer as one undoable edit.
+   *
+   * Only an explicit user command may call this (JSON "Format"/"Minify"); a
+   * viewer never rewrites the document on its own.
+   */
+  onReplaceContent?: (text: string) => void;
 }
 
 export type ViewerComponent = ComponentType<ViewerProps>;

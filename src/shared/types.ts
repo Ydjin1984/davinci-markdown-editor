@@ -12,29 +12,21 @@ export type LayoutMode = "editor" | "preview" | "split-h" | "split-v";
 
 export type ThemeMode = "system" | "light" | "dark";
 
-export type MermaidTheme =
-  | "auto"
-  | "davinci"
-  | "default"
-  | "dark"
-  | "forest"
-  | "neutral"
-  | "base";
+export type MermaidTheme = "auto" | "davinci" | "default" | "dark" | "forest" | "neutral" | "base";
 
 export type ExternalChangePolicy = "ask" | "autoReload" | "keepLocal";
 
 export type DefaultEolPolicy = "preserve" | "lf" | "crlf";
 
-export type FileFilterKind =
-  | "markdown"
-  | "json"
-  | "csv"
-  | "log"
-  | "xml"
-  | "text"
-  | "svg"
-  | "html"
-  | "any";
+export type FileFilterKind = "markdown" | "json" | "csv" | "log" | "xml" | "text" | "svg" | "html" | "any";
+
+/**
+ * Every kind of text document the editor understands.
+ *
+ * Declared here because Rust reports it on directory entries and path probes,
+ * and the rest of the application speaks the same vocabulary.
+ */
+export type DocumentKind = "markdown" | "json" | "csv" | "log" | "xml" | "text";
 
 export type DialogKind = "info" | "warning" | "error";
 
@@ -102,6 +94,8 @@ export interface PathInfo {
   isDir: boolean;
   isFile: boolean;
   isMarkdown: boolean;
+  /** Format reported by Rust; same vocabulary as the document registry. */
+  kind?: DocumentKind;
   readOnly: boolean;
 }
 
@@ -111,6 +105,8 @@ export interface DirEntry {
   isDir: boolean;
   isSymlink: boolean;
   isMarkdown: boolean;
+  /** Format reported by Rust; same vocabulary as the document registry. */
+  kind?: DocumentKind;
   extension: string | null;
   size: number;
   modifiedMs: number;

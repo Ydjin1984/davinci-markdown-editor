@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { usePreviewStore } from "./previewStore";
 import { setPreviewContainer } from "./previewApi";
+import { DocumentPreview } from "./DocumentPreview";
 import {
   collectAnchors,
   resetScrollSync,
@@ -19,15 +20,17 @@ import {
   syncPreviewToEditor,
   type Anchor,
 } from "./scrollSync";
-import { activeEditor } from "@/editor/editorApi";
+import { activeEditor, goToPosition, replaceDocumentText } from "@/editor/editorApi";
 import { useDocumentsStore } from "@/tabs/documentsStore";
 import { useSettingsStore } from "@/settings/settingsStore";
 import { useUiStore } from "@/app/uiStore";
-import { hydrateDiagrams, applyZoom, fitDiagram, standaloneSvg } from "@/mermaid/hydrate";
+import { hydrateDiagrams, applyZoom, fitDiagram, standaloneSvg, diagramSource } from "@/mermaid/hydrate";
 import { copyText } from "@/shared/clipboard";
 import * as ipc from "@/shared/ipc";
 import { t } from "@/shared/i18n";
-import { basename, cx, isMarkdownPath, resolveLinkTarget, stem } from "@/shared/util";
+import { basename, cx, resolveLinkTarget, stem } from "@/shared/util";
+import { isSupportedDocumentPath } from "@/documents/registry";
+import type { DocumentKind } from "@/documents/types";
 
 /**
  * Hydrate the diagrams and publish whether any are still being drawn.
@@ -53,6 +56,8 @@ export function PreviewPane() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const anchorsRef = useRef<Anchor[]>([]);
   const htmlRef = useRef("");
+  /** Palette + markup of the hydration currently on screen. */
+  const hydrationKeyRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
   const frameRef = useRef(0);
 
@@ -63,6 +68,8 @@ export function PreviewPane() {
     return active ?? null;
   });
   const preview = useSettingsStore((state) => state.settings.preview);
+  const kind = document?.kind ?? "markdown";
+  const isMarkdown = kind === "markdown";
   // The palette has to follow the same decision the Markdown pipeline was
   // given. Printing renders with the light theme, so reading the stored
   // appearance here would leave the page dark around light-highlighted code.
@@ -84,10 +91,12 @@ export function PreviewPane() {
   }, []);
 
   // Expose the live DOM so exports contain exactly what the user is looking at.
+  // Only the Markdown preview is exportable; a structured viewer has no HTML
+  // document of its own.
   useEffect(() => {
-    setPreviewContainer(containerRef.current);
+    setPreviewContainer(isMarkdown ? containerRef.current : null);
     return () => setPreviewContainer(null);
-  }, []);
+  }, [isMarkdown]);
 
   /**
    * Replace a broken image with an explanation.
@@ -132,32 +141,42 @@ export function PreviewPane() {
   }, []);
 
   // Inject the rendered HTML and bring the diagrams to life.
+  //
+  // Content and palette are both part of the hydration key: a theme switch must
+  // re-render the SVGs, but the same pass must never be started twice for one
+  // state (returning from a structured viewer used to do exactly that).
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
-    if (htmlRef.current === html) return;
+    if (!container || !isMarkdown) return;
+
+    const hydrationKey = `${appearance}\u0000${preview.mermaidTheme}\u0000${html}`;
+    if (hydrationKeyRef.current === hydrationKey) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    hydrationKeyRef.current = hydrationKey;
 
-    const previousScroll = container.scrollTop;
-    htmlRef.current = html;
-    container.innerHTML = html;
-    container.scrollTop = previousScroll;
+    if (htmlRef.current !== html) {
+      const previousScroll = container.scrollTop;
+      htmlRef.current = html;
+      container.innerHTML = html;
+      container.scrollTop = previousScroll;
+    }
 
     reportHydration(container, diagramOptions, controller, refreshAnchors);
-  }, [html, diagramOptions, refreshAnchors]);
+  }, [html, diagramOptions, refreshAnchors, isMarkdown, appearance, preview.mermaidTheme]);
 
-  // Re-hydrate when the colour scheme changes, even if the HTML is identical.
+  // A structured viewer owns its DOM: stop any diagram work from the previous
+  // Markdown document instead of letting it touch a pane it no longer owns.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !htmlRef.current) return;
+    if (isMarkdown) return;
     abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    reportHydration(container, diagramOptions, controller, refreshAnchors);
-  }, [diagramOptions, refreshAnchors]);
+    abortRef.current = null;
+    htmlRef.current = "";
+    hydrationKeyRef.current = "";
+    usePreviewStore.getState().setDiagramsPending(false);
+  }, [isMarkdown]);
 
   useEffect(
     () => () => {
@@ -166,6 +185,22 @@ export function PreviewPane() {
     },
     [],
   );
+
+  // Escape leaves a fullscreen diagram before the shell treats it as "close
+  // dialog"; otherwise pressing it in a diagram would do nothing.
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const block = containerRef.current?.querySelector<HTMLElement>(".md-diagram.is-fullscreen");
+      if (!block) return;
+      event.preventDefault();
+      event.stopPropagation();
+      block.classList.remove("is-fullscreen");
+      fitDiagram(block);
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, []);
 
   // Anchor positions change with the pane size.
   useEffect(() => {
@@ -182,7 +217,7 @@ export function PreviewPane() {
 
   // Editor → preview.
   useEffect(() => {
-    if (!preview.syncScroll) return;
+    if (!preview.syncScroll || !isMarkdown) return;
 
     let disposed = false;
     let detach: (() => void) | null = null;
@@ -212,11 +247,11 @@ export function PreviewPane() {
       disposed = true;
       detach?.();
     };
-  }, [preview.syncScroll]);
+  }, [preview.syncScroll, isMarkdown]);
 
   // Preview → editor.
   useEffect(() => {
-    if (!preview.syncScroll) return;
+    if (!preview.syncScroll || !isMarkdown) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -232,7 +267,7 @@ export function PreviewPane() {
 
     container.addEventListener("scroll", handler, { passive: true });
     return () => container.removeEventListener("scroll", handler);
-  }, [preview.syncScroll]);
+  }, [preview.syncScroll, isMarkdown]);
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -275,6 +310,28 @@ export function PreviewPane() {
           case "reset":
             applyZoom(block, 1);
             break;
+          case "fullscreen": {
+            // A CSS overlay rather than the Fullscreen API: it works the same
+            // in WebView2 and WebKitGTK and leaves the rest of the shell alone.
+            const entering = !block.classList.contains("is-fullscreen");
+            block.classList.toggle("is-fullscreen", entering);
+            if (entering) {
+              fitDiagram(block);
+            } else {
+              applyZoom(block, Number(block.dataset.diagramZoom ?? "1") || 1);
+            }
+            break;
+          }
+          case "copy-source": {
+            const source = diagramSource(block);
+            if (!source.trim()) return;
+            void copyText(source).then((copied) => {
+              useUiStore
+                .getState()
+                .notify(copied ? t("toast.copied") : t("toast.copyFailed"), copied ? "success" : "error");
+            });
+            break;
+          }
           case "copy-svg": {
             const svg = standaloneSvg(block);
             if (!svg) return;
@@ -330,32 +387,75 @@ export function PreviewPane() {
         return;
       }
 
-      // Relative targets: Markdown files open as documents, everything else is
-      // left alone rather than navigating the webview away from the app.
+      // Relative targets: any supported document opens as a tab, everything
+      // else is left alone rather than navigating the webview away from the app.
       const documentPath = document?.path ?? null;
       const documentDir = documentPath ? documentPath.replace(/[\\/][^\\/]*$/, "") : null;
       const absolute = resolveLinkTarget(href, documentDir);
-      if (isMarkdownPath(absolute)) {
+      if (isSupportedDocumentPath(absolute)) {
         void useDocumentsStore.getState().openPaths([absolute]);
       }
     },
     [document?.path, document?.title, preview.openExternalLinks],
   );
 
+  /**
+   * Take the user to a line in the source.
+   *
+   * When the editor pane is hidden the caret cannot move, so the layout is
+   * switched to the split view first and the jump is retried once the pane is
+   * mounted.
+   */
+  const handleJumpToLine = useCallback((line: number, column?: number) => {
+    if (goToPosition(line, column ?? 1)) return;
+    useSettingsStore.getState().patch("view", { layout: "split-v" });
+    setTimeout(() => {
+      goToPosition(line, column ?? 1);
+    }, 60);
+  }, []);
+
+  /** Replace the buffer after an explicit viewer command (JSON format/minify). */
+  const handleReplaceContent = useCallback((text: string) => {
+    if (replaceDocumentText(text)) return;
+    useSettingsStore.getState().patch("view", { layout: "split-v" });
+    setTimeout(() => {
+      replaceDocumentText(text);
+    }, 60);
+  }, []);
+
+  /** Re-read a plain text document as one of the structured formats. */
+  const handleKindChange = useCallback((nextKind: DocumentKind) => {
+    const id = useDocumentsStore.getState().activeId;
+    if (id) useDocumentsStore.getState().setKind(id, nextKind);
+  }, []);
+
   const showEmpty = !document;
-  const showNothingToPreview = document && !html.trim();
+  const showNothingToPreview = isMarkdown && document && !html.trim();
 
   return (
     <div className={cx("preview-pane", pending && "is-pending")}>
       {warning && <div className="preview-banner">{warning}</div>}
-      <div
-        className={cx("markdown-body", `markdown-body--${appearance}`)}
-        ref={containerRef}
-        onClick={handleClick}
-        tabIndex={0}
-        role="document"
-        style={{ fontSize: `${preview.fontSize}px` }}
-      />
+      {isMarkdown ? (
+        <div
+          className={cx("markdown-body", `markdown-body--${appearance}`)}
+          ref={containerRef}
+          onClick={handleClick}
+          tabIndex={0}
+          role="document"
+          style={{ fontSize: `${preview.fontSize}px` }}
+        />
+      ) : (
+        <DocumentPreview
+          kind={kind}
+          content={document?.content ?? ""}
+          documentId={document?.id ?? ""}
+          revision={document?.contentEpoch ?? 0}
+          appearance={appearance}
+          onJumpToLine={handleJumpToLine}
+          onReplaceContent={handleReplaceContent}
+          onKindChange={handleKindChange}
+        />
+      )}
       {showEmpty && <p className="pane-placeholder">{t("preview.noDocument")}</p>}
       {showNothingToPreview && !warning && <p className="pane-placeholder">{t("preview.empty")}</p>}
     </div>

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useDocumentsStore } from "@/tabs/documentsStore";
 import { useCursorStore } from "@/editor/cursorStore";
 import { usePreviewStore } from "@/preview/previewStore";
+import { descriptorFor } from "@/documents/registry";
 import { countWords, cx, formatBytes } from "@/shared/util";
 import { t } from "@/shared/i18n";
 
@@ -64,7 +65,9 @@ export function StatusBar() {
         {document.encoding}
         {document.bom ? " BOM" : ""}
       </span>
-      <span className="status-item">{document.readOnly ? t("status.readOnly") : "Markdown"}</span>
+      <span className="status-item">
+        {document.readOnly ? t("status.readOnly") : t(descriptorFor(document.kind).labelKey)}
+      </span>
     </footer>
   );
 }

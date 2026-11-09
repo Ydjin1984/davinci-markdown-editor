@@ -41,17 +41,14 @@ export function SourceView({ content, onJumpToLine, className }: SourceViewProps
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-    setScrollTop(0);
-    setActiveLine(0);
-  }, [content]);
-
   const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
     setScrollTop(event.currentTarget.scrollTop);
   }, []);
 
-  const first = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN);
+  // The window is clamped instead of resetting the scroll position: the source
+  // is edited in the editor pane, so a keystroke must not throw the reader back
+  // to the top of the file.
+  const first = Math.min(Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN), Math.max(0, total - 1));
   const visible = Math.ceil(viewportHeight / LINE_HEIGHT) + OVERSCAN * 2;
   const last = Math.min(total, first + visible);
 

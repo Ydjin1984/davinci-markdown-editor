@@ -340,6 +340,11 @@ button:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
 .tab-warning {
   width: 6px;
   height: 6px;
@@ -464,6 +469,54 @@ button:focus-visible {
 
 .preview-pane.is-pending .markdown-body {
   opacity: 0.985;
+}
+
+/* Structured viewers own the whole pane and scroll internally. */
+.preview-pane > .format-viewer,
+.preview-pane > .format-preview-plain {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.format-preview-plain {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.format-preview-hint {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-muted);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.format-preview-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.format-preview-kind select {
+  border: 1px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--fg-default);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.format-preview-suggestion {
+  color: var(--accent);
 }
 
 .preview-pane .preview-banner {

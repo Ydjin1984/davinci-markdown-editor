@@ -64,6 +64,7 @@ beforeEach(() => {
         id: "doc-1",
         path: "content://com.android.providers.downloads/document/42",
         title: "notes.md",
+        kind: "markdown",
         content: "# hi",
         savedContent: "# hi",
         encoding: "UTF-8",

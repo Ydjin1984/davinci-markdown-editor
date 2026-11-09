@@ -11,8 +11,10 @@ import * as ipc from "@/shared/ipc";
 import { IpcError } from "@/shared/ipc";
 import { notify } from "@/app/uiStore";
 import { t } from "@/shared/i18n";
-import { basename, nextId, stem } from "@/shared/util";
+import { basename, extensionOf, nextId, stem } from "@/shared/util";
 import { settingsSnapshot } from "@/settings/settingsStore";
+import { descriptorFor, kindFromPath } from "@/documents/registry";
+import type { DocumentKind } from "@/documents/types";
 import type { Eol, FsChange, TextDocument } from "@/shared/types";
 
 export type ExternalState = "none" | "changed" | "removed";
@@ -21,6 +23,8 @@ export interface DocumentRecord {
   id: string;
   path: string | null;
   title: string;
+  /** Format the document is displayed as; derived from the path or chosen. */
+  kind: DocumentKind;
   /** In-memory text, always LF-normalised. */
   content: string;
   /** Text as it exists on disk; drives the dirty indicator exactly. */
@@ -49,18 +53,20 @@ interface DocumentsState {
   documents: DocumentRecord[];
   activeId: string | null;
   /** Stack of recently closed documents, newest last. */
-  closed: Array<{ path: string | null; content: string; title: string }>;
+  closed: Array<{ path: string | null; content: string; title: string; kind: DocumentKind }>;
 
   activeDocument: () => DocumentRecord | null;
   byPath: (path: string) => DocumentRecord | undefined;
 
   openPaths: (paths: string[], options?: { silent?: boolean }) => Promise<void>;
-  createUntitled: (content?: string) => string;
+  createUntitled: (content?: string, kind?: DocumentKind) => string;
   activate: (id: string) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
 
   /** Flag a document as edited without paying for a content copy. */
   touch: (id: string) => void;
+  /** Change the format a document is interpreted as (manual override). */
+  setKind: (id: string, kind: DocumentKind) => void;
   setContent: (id: string, content: string) => void;
   setCursorAt: (id: string, line: number, col: number, scrollTop: number) => void;
 
@@ -83,6 +89,7 @@ function recordFrom(document: TextDocument): DocumentRecord {
     id: nextId("doc"),
     path: document.path,
     title: document.name,
+    kind: kindFromPath(document.name || document.path),
     content: document.content,
     savedContent: document.content,
     encoding: document.encoding,
@@ -99,12 +106,13 @@ function recordFrom(document: TextDocument): DocumentRecord {
   };
 }
 
-function untitledRecord(content: string, index: number): DocumentRecord {
+function untitledRecord(content: string, index: number, kind: DocumentKind = "markdown"): DocumentRecord {
   const settings = settingsSnapshot();
   return {
     id: nextId("doc"),
     path: null,
     title: index === 0 ? t("app.untitled") : `${t("app.untitled")} ${index + 1}`,
+    kind,
     content,
     savedContent: "",
     encoding: settings.files.defaultEncoding === "auto" ? "UTF-8" : settings.files.defaultEncoding,
@@ -167,8 +175,8 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     }
   },
 
-  createUntitled: (content = "") => {
-    const record = untitledRecord(content, get().documents.filter((d) => d.path === null).length);
+  createUntitled: (content = "", kind: DocumentKind = "markdown") => {
+    const record = untitledRecord(content, get().documents.filter((d) => d.path === null).length, kind);
     set((state) => ({ documents: [...state.documents, record], activeId: record.id }));
     return record.id;
   },
@@ -190,6 +198,13 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       const document = state.documents.find((item) => item.id === id);
       if (!document || document.dirty) return state;
       return { documents: update(state.documents, id, { dirty: true }) };
+    }),
+
+  setKind: (id, kind) =>
+    set((state) => {
+      const document = state.documents.find((item) => item.id === id);
+      if (!document || document.kind === kind) return state;
+      return { documents: update(state.documents, id, { kind }) };
     }),
 
   setContent: (id, content) =>
@@ -222,9 +237,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     let target = document.path;
 
     if (!target || options?.saveAs) {
-      const suggested = target ? basename(target) : `${stem(document.title)}.md`;
+      const suggested = target ? basename(target) : defaultFileName(document);
       const startDir = target ? null : null;
-      const picked = await ipc.pickSavePath(suggested, "markdown", startDir);
+      const picked = await ipc.pickSavePath(suggested, descriptorFor(document.kind).filter, startDir);
       if (!picked) return false;
       target = picked;
     }
@@ -252,7 +267,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
           if (overwrite) {
             return write(null);
           }
-          const copy = await ipc.pickSavePath(`copy-of-${basename(target!)}`, "markdown", null);
+          const copy = await ipc.pickSavePath(
+            `copy-of-${basename(target!)}`,
+            descriptorFor(document.kind).filter,
+            null,
+          );
           if (!copy) return null;
           try {
             return await ipc.writeDocument(copy, document.content, {
@@ -282,6 +301,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       documents: update(state.documents, id, {
         path: saved.path,
         title: saved.name,
+        // Saving under another extension changes how the document is shown;
+        // the text itself is untouched.
+        kind: kindFromPath(saved.name || saved.path),
         // `content` is left alone: the user may have typed while the write was
         // in flight, and only `savedContent` should move forward.
         savedContent: saved.content,
@@ -374,7 +396,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
         activeId: nextActive,
         closed: [
           ...state.closed.slice(-19),
-          { path: document.path, content: document.content, title: document.title },
+          { path: document.path, content: document.content, title: document.title, kind: document.kind },
         ],
       };
     });
@@ -409,7 +431,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     if (entry.path) {
       void get().openPaths([entry.path]);
     } else {
-      const record = untitledRecord(entry.content, get().documents.filter((d) => d.path === null).length);
+      const record = untitledRecord(
+        entry.content,
+        get().documents.filter((d) => d.path === null).length,
+        entry.kind,
+      );
       set((state) => ({ documents: [...state.documents, record], activeId: record.id }));
     }
   },
@@ -425,7 +451,14 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       for (const change of renames) {
         documents = documents.map((document) =>
           isSamePath(document.path, change.path)
-            ? { ...document, path: change.to!, title: basename(change.to!) }
+            ? {
+                ...document,
+                path: change.to!,
+                title: basename(change.to!),
+                // A rename can change the format: data.json -> data.md must
+                // switch grammar, viewer and Save As filter too.
+                kind: kindFromPath(change.to!),
+              }
             : document,
         );
       }
@@ -490,7 +523,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   handlePathRenamed: (from, to) => {
     set((state) => ({
       documents: state.documents.map((document) =>
-        isSamePath(document.path, from) ? { ...document, path: to, title: basename(to) } : document,
+        isSamePath(document.path, from)
+          ? { ...document, path: to, title: basename(to), kind: kindFromPath(to) }
+          : document,
       ),
     }));
   },
@@ -499,6 +534,19 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 function describe(error: unknown): string {
   if (error instanceof IpcError) return error.message;
   return String(error);
+}
+
+/**
+ * Default name for a Save As of a document that has no path yet.
+ *
+ * An untitled Markdown document becomes `Untitled.md`; a document whose title
+ * already carries an extension keeps it, so saving does not silently change the
+ * format.
+ */
+function defaultFileName(document: DocumentRecord): string {
+  if (extensionOf(document.title)) return document.title;
+  const extension = descriptorFor(document.kind).extensions[0] ?? "md";
+  return `${stem(document.title)}.${extension}`;
 }
 
 /** Documents that would lose data if the application quit right now. */

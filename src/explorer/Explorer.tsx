@@ -13,12 +13,16 @@ import * as ipc from "@/shared/ipc";
 import { IpcError } from "@/shared/ipc";
 import { t } from "@/shared/i18n";
 import { basename, cx, dirname } from "@/shared/util";
+import { isSupportedDocumentPath, kindFromPath } from "@/documents/registry";
+import { FileTypeIcon } from "@/shared/FileTypeIcon";
+import type { DocumentKind } from "@/documents/types";
 import type { DirEntry } from "@/shared/types";
 
 interface ContextMenuState {
   path: string;
   isDir: boolean;
-  isMarkdown: boolean;
+  kind: DocumentKind;
+  openable: boolean;
   x: number;
   y: number;
 }
@@ -85,7 +89,7 @@ export function Explorer() {
       if (creating.kind === "file") {
         const path = await ipc.createFile(creating.parent, name, "");
         await refresh(creating.parent);
-        if (name.toLowerCase().endsWith(".md") || name.toLowerCase().endsWith(".markdown")) {
+        if (isSupportedDocumentPath(path)) {
           await openPaths([path]);
         }
       } else {
@@ -244,7 +248,7 @@ export function Explorer() {
           style={{ left: menu.x, top: menu.y }}
           onPointerDown={(event) => event.stopPropagation()}
         >
-          {!menu.isDir && menu.isMarkdown && (
+          {!menu.isDir && menu.openable && (
             <button type="button" onClick={() => void openPaths([menu.path])}>
               {t("file.open")}
             </button>
@@ -356,6 +360,8 @@ function DirectoryList(props: DirectoryListProps) {
       {entries.map((entry) => {
         const isExpanded = entry.isDir && expanded.includes(entry.path);
         const isRenaming = props.renaming?.path === entry.path;
+        const kind = kindFromPath(entry.path);
+        const openable = isSupportedDocumentPath(entry.path);
 
         return (
           <li key={entry.path}>
@@ -364,27 +370,28 @@ function DirectoryList(props: DirectoryListProps) {
                 "tree-row",
                 entry.isDir ? "is-dir" : "is-file",
                 entry.path === activePath && "is-active",
-                !entry.isDir && !entry.isMarkdown && "is-secondary",
+                !entry.isDir && !openable && "is-secondary",
               )}
               style={{ paddingLeft: depth * 12 + 10 }}
               title={entry.path}
               onClick={() => {
                 if (entry.isDir) props.onToggle(entry.path);
-                else if (entry.isMarkdown) props.onOpen(entry.path);
+                else if (openable) props.onOpen(entry.path);
               }}
               onContextMenu={(event) => {
                 event.preventDefault();
                 props.onContextMenu({
                   path: entry.path,
                   isDir: entry.isDir,
-                  isMarkdown: entry.isMarkdown,
+                  kind,
+                  openable,
                   x: event.clientX,
                   y: event.clientY,
                 });
               }}
             >
               <span className="tree-icon">
-                {entry.isDir ? (isExpanded ? "▾" : "▸") : entry.isMarkdown ? "▤" : "·"}
+                {entry.isDir ? isExpanded ? "▾" : "▸" : <FileTypeIcon kind={kind} size={14} />}
               </span>
               {isRenaming ? (
                 <input

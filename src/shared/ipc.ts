@@ -264,6 +264,9 @@ export const probeAsset = (path: string) => call<AssetProbe>("probe_asset", { pa
 
 export const markdownExtensions = () => call<string[]>("markdown_extensions");
 
+/** Every extension the backend is willing to open as a document. */
+export const documentExtensions = () => call<string[]>("document_extensions");
+
 // ---------------------------------------------------------------------------
 // Window helpers (thin wrappers over the permitted core commands)
 // ---------------------------------------------------------------------------

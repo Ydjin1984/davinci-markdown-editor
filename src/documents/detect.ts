@@ -22,13 +22,15 @@ export function suggestKindFromContent(source: string): DocumentKind | null {
   const trimmed = sample.trimStart();
   if (!trimmed) return null;
 
+  // NDJSON is a log format that happens to be JSON per line, so it has to be
+  // recognised before the single-document JSON check.
+  if (looksLikeNdjson(sample)) return "log";
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     return looksLikeJson(sample) ? "json" : null;
   }
   if (trimmed.startsWith("<?xml") || /^<[A-Za-z_:][^>]*>/.test(trimmed)) {
     return looksLikeXml(sample) ? "xml" : null;
   }
-  if (looksLikeNdjson(sample)) return "log";
   if (looksLikeLog(sample)) return "log";
   if (looksLikeDelimited(sample)) return "csv";
   return null;
@@ -49,7 +51,8 @@ function looksLikeXml(sample: string): boolean {
 
 function looksLikeNdjson(sample: string): boolean {
   const lines = sample.split(/\r?\n/).filter((line) => line.trim().length > 0);
-  if (lines.length < 1) return false;
+  // One object is simply a JSON document; NDJSON needs a line-per-record shape.
+  if (lines.length < 2) return false;
   const objectLines = lines.filter((line) => {
     const text = line.trim();
     return text.startsWith("{") && text.endsWith("}");
@@ -58,7 +61,10 @@ function looksLikeNdjson(sample: string): boolean {
 }
 
 function looksLikeLog(sample: string): boolean {
-  const lines = sample.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(0, 20);
+  const lines = sample
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+    .slice(0, 20);
   if (lines.length === 0) return false;
   const stamped = lines.filter((line) =>
     /^\s*(\d{4}-\d{2}-\d{2}[T ]|[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:)/.test(line),
@@ -67,7 +73,10 @@ function looksLikeLog(sample: string): boolean {
 }
 
 function looksLikeDelimited(sample: string): boolean {
-  const lines = sample.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(0, 8);
+  const lines = sample
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+    .slice(0, 8);
   if (lines.length < 2) return false;
   for (const delimiter of [",", ";", "\t", "|"]) {
     const counts = lines.map((line) => countUnquoted(line, delimiter));

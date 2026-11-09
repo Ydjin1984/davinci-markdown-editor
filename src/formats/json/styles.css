@@ -1,0 +1,88 @@
+/**
+ * JSON-only styles.
+ *
+ * Everything generic — shell, diagnostics, source, tree rows — comes from
+ * `formats/shared/viewer.css`; this file only adds the JSON tree extras.
+ */
+
+.format-json {
+  min-height: 0;
+}
+
+/* --- notes -------------------------------------------------------------- */
+
+.format-json-note {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.format-json-warning {
+  color: var(--warning);
+}
+
+/* --- tree --------------------------------------------------------------- */
+
+.format-json-tree {
+  transition: opacity 120ms ease-in;
+}
+
+.format-json-tree.is-stale {
+  opacity: 0.55;
+}
+
+.format-json-row {
+  align-items: baseline;
+}
+
+.format-json-key.is-duplicate {
+  color: var(--warning);
+  text-decoration: underline dotted;
+}
+
+/* Copy actions stay out of the way until the row is used. */
+.format-json-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-left: 16px;
+  opacity: 0;
+  transition: opacity 90ms ease-in;
+}
+
+.format-json-row:hover .format-json-actions,
+.format-json-row:focus-within .format-json-actions {
+  opacity: 1;
+}
+
+.format-json-actions .format-token-button {
+  font-size: 11px;
+}
+
+/* --- source panels ------------------------------------------------------ */
+
+.format-json-heavy {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.format-json-heavy .format-json-source {
+  flex: 1;
+  min-height: 0;
+}
+
+.format-json-invalid .format-json-source {
+  height: 320px;
+  min-height: 220px;
+}
+
+.format-json-source {
+  border-top: 1px solid var(--border-muted);
+}
