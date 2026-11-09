@@ -1,7 +1,7 @@
 {
   "name": "davinci-markdown-editor",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Natively integrated Markdown editor with GitHub Flavored Markdown, Mermaid diagrams, KaTeX math and live preview.",
   "type": "module",
   "license": "MIT",
@@ -32,7 +32,9 @@
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/language": "^6.12.4",
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/search": "^6.7.2",

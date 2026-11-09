@@ -244,7 +244,7 @@ impl Settings {
         }
         if !matches!(
             self.preview.mermaid_theme.as_str(),
-            "auto" | "default" | "dark" | "forest" | "neutral" | "base"
+            "auto" | "davinci" | "default" | "dark" | "forest" | "neutral" | "base"
         ) {
             self.preview.mermaid_theme = "auto".into();
         }
@@ -417,6 +417,53 @@ mod tests {
         assert_eq!(settings.editor.font_size, 72);
         assert_eq!(settings.view.split_ratio, 0.85);
         assert_eq!(settings.preview.theme, "system");
+    }
+
+    #[test]
+    fn davinci_is_a_valid_mermaid_theme() {
+        let mut settings = Settings::default();
+        settings.preview.mermaid_theme = "davinci".into();
+        settings.sanitize();
+        assert_eq!(settings.preview.mermaid_theme, "davinci");
+    }
+
+    #[test]
+    fn existing_mermaid_themes_are_still_accepted() {
+        let mut settings = Settings::default();
+        for theme in ["auto", "default", "dark", "forest", "neutral", "base"] {
+            settings.preview.mermaid_theme = theme.to_string();
+            settings.sanitize();
+            assert_eq!(settings.preview.mermaid_theme, theme);
+        }
+    }
+
+    #[test]
+    fn an_unknown_mermaid_theme_still_falls_back_to_auto() {
+        let mut settings = Settings::default();
+        settings.preview.mermaid_theme = "neon".into();
+        settings.sanitize();
+        assert_eq!(settings.preview.mermaid_theme, "auto");
+    }
+
+    #[test]
+    fn an_old_settings_file_keeps_loading() {
+        // A 0.2.2-era file: no document-kind fields, no `davinci` theme.
+        let old = r#"{
+            "preview": { "theme": "dark", "mermaidTheme": "forest" },
+            "files": {
+                "recentFiles": [ { "path": "/tmp/a.md", "name": "a.md", "openedAt": 7 } ]
+            },
+            "view": { "layout": "editor" }
+        }"#;
+        let settings: Settings = serde_json::from_str(old).expect("old settings parse");
+        assert_eq!(settings.preview.mermaid_theme, "forest");
+        assert_eq!(settings.preview.theme, "dark");
+        assert_eq!(settings.files.recent_files.len(), 1);
+        assert_eq!(settings.files.recent_files[0].path, "/tmp/a.md");
+        assert_eq!(settings.view.layout, "editor");
+        // Fields the old file never had still arrive with their defaults.
+        assert_eq!(settings.editor.tab_size, 4);
+        assert_eq!(settings.files.default_eol, "lf");
     }
 
     #[test]

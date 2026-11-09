@@ -258,6 +258,7 @@ pub fn run() {
             commands::read_asset_data_url,
             commands::print_document,
             commands::markdown_extensions,
+            commands::document_extensions,
         ])
         .run(tauri::generate_context!())
         .expect("the Tauri runtime could not be started");

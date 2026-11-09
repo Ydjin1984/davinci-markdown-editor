@@ -450,9 +450,54 @@ pub fn open_external_url(app: AppHandle, url: String) -> Result<()> {
 #[serde(rename_all = "camelCase")]
 pub enum FileFilterKind {
     Markdown,
+    Json,
+    Csv,
+    Log,
+    Xml,
+    Text,
     Svg,
     Html,
     Any,
+}
+
+/// Label and dot-extensions for one dialog filter.
+///
+/// `Any` deliberately has no filter of its own: the open dialog appends an
+/// "All files" filter separately, and the save dialog keeps accepting any name
+/// the user types. The extension lists come from [`crate::paths`] so the dialog
+/// and the document registry cannot drift apart.
+#[cfg(not(target_os = "android"))]
+pub fn filter_spec(kind: FileFilterKind) -> Option<(&'static str, &'static [&'static str])> {
+    let spec: (&'static str, &'static [&'static str]) = match kind {
+        FileFilterKind::Markdown => ("Markdown", paths::MARKDOWN_EXTENSIONS),
+        FileFilterKind::Json => ("JSON", paths::JSON_EXTENSIONS),
+        FileFilterKind::Csv => ("CSV", paths::CSV_EXTENSIONS),
+        FileFilterKind::Log => ("Log files", paths::LOG_EXTENSIONS),
+        FileFilterKind::Xml => ("XML", paths::XML_EXTENSIONS),
+        FileFilterKind::Text => ("Text", paths::TEXT_EXTENSIONS),
+        FileFilterKind::Svg => ("SVG image", &["svg"]),
+        FileFilterKind::Html => ("HTML document", &["html", "htm"]),
+        FileFilterKind::Any => return None,
+    };
+    Some(spec)
+}
+
+/// MIME type a filter implies when the platform picker asks for one.
+///
+/// Android's "create document" flow takes a MIME type instead of an extension
+/// filter list, so the same [`FileFilterKind`] has to answer both questions.
+pub fn mime_for_filter(kind: FileFilterKind) -> &'static str {
+    match kind {
+        FileFilterKind::Markdown => "text/markdown",
+        FileFilterKind::Json => "application/json",
+        FileFilterKind::Csv => "text/csv",
+        FileFilterKind::Log => "text/plain",
+        FileFilterKind::Xml => "application/xml",
+        FileFilterKind::Text => "text/plain",
+        FileFilterKind::Svg => "image/svg+xml",
+        FileFilterKind::Html => "text/html",
+        FileFilterKind::Any => "application/octet-stream",
+    }
 }
 
 /// Name the filters the desktop save dialog offers.
@@ -464,13 +509,9 @@ fn apply_filter<R: tauri::Runtime>(
     builder: tauri_plugin_dialog::FileDialogBuilder<R>,
     kind: FileFilterKind,
 ) -> tauri_plugin_dialog::FileDialogBuilder<R> {
-    match kind {
-        FileFilterKind::Markdown => {
-            builder.add_filter("Markdown", &["md", "markdown", "mdown", "mkd", "txt"])
-        }
-        FileFilterKind::Svg => builder.add_filter("SVG image", &["svg"]),
-        FileFilterKind::Html => builder.add_filter("HTML document", &["html", "htm"]),
-        FileFilterKind::Any => builder,
+    match filter_spec(kind) {
+        Some((label, extensions)) => builder.add_filter(label, extensions),
+        None => builder,
     }
 }
 
@@ -507,10 +548,23 @@ pub async fn pick_open_files(app: AppHandle) -> Result<Vec<String>> {
 
     #[cfg(not(target_os = "android"))]
     {
-        let picked = app
-            .dialog()
-            .file()
-            .add_filter("Markdown", &["md", "markdown", "mdown", "mkd", "txt"])
+        // One filter per document family plus the catch-all, so a user who
+        // wants to open `notes.txt` or `data.json` never has to hunt through
+        // "All files" first.
+        let mut builder = app.dialog().file();
+        for kind in [
+            FileFilterKind::Markdown,
+            FileFilterKind::Json,
+            FileFilterKind::Csv,
+            FileFilterKind::Log,
+            FileFilterKind::Xml,
+            FileFilterKind::Text,
+        ] {
+            if let Some((label, extensions)) = filter_spec(kind) {
+                builder = builder.add_filter(label, extensions);
+            }
+        }
+        let picked = builder
             .add_filter("All files", &["*"])
             .blocking_pick_files();
         Ok(picked.map(to_strings).unwrap_or_default())
@@ -555,12 +609,7 @@ pub async fn pick_save_path(
         let name = default_name
             .filter(|name| !name.is_empty())
             .unwrap_or_else(|| "document.md".to_string());
-        let mime = match kind.unwrap_or(FileFilterKind::Markdown) {
-            FileFilterKind::Markdown => "text/markdown",
-            FileFilterKind::Html => "text/html",
-            FileFilterKind::Svg => "image/svg+xml",
-            FileFilterKind::Any => "application/octet-stream",
-        };
+        let mime = mime_for_filter(kind.unwrap_or(FileFilterKind::Markdown));
         Ok(mobile::pick_save_file(&name, mime)?.map(|picked| picked.uri))
     }
 
@@ -805,5 +854,127 @@ pub fn markdown_extensions() -> Vec<String> {
         .collect()
 }
 
+/// Every extension the editor can open, for the document registry and pickers.
+///
+/// `markdown_extensions` stays as it was for existing callers; this is the
+/// broader list of the five document families plus plain text.
+#[tauri::command]
+pub fn document_extensions() -> Vec<String> {
+    paths::DOCUMENT_EXTENSIONS
+        .iter()
+        .map(|ext| (*ext).to_string())
+        .collect()
+}
+
 /// Re-exported so the frontend and the docs refer to one constant.
 pub use watcher::FS_CHANGED_EVENT;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filter_kinds_parse_from_camel_case_strings() {
+        for (raw, expected) in [
+            ("\"markdown\"", FileFilterKind::Markdown),
+            ("\"json\"", FileFilterKind::Json),
+            ("\"csv\"", FileFilterKind::Csv),
+            ("\"log\"", FileFilterKind::Log),
+            ("\"xml\"", FileFilterKind::Xml),
+            ("\"text\"", FileFilterKind::Text),
+            ("\"svg\"", FileFilterKind::Svg),
+            ("\"html\"", FileFilterKind::Html),
+            ("\"any\"", FileFilterKind::Any),
+        ] {
+            let parsed: FileFilterKind = serde_json::from_str(raw).expect("filter kind");
+            assert_eq!(parsed, expected, "{raw}");
+        }
+    }
+
+    #[cfg(not(target_os = "android"))]
+    #[test]
+    fn save_filters_use_matching_dot_extensions() {
+        let (json_label, json_extensions) = filter_spec(FileFilterKind::Json).expect("json filter");
+        assert_eq!(json_label, "JSON");
+        assert!(json_extensions.contains(&"json"));
+        assert!(!json_extensions.contains(&"jsonc"));
+
+        let (svg_label, svg_extensions) = filter_spec(FileFilterKind::Svg).expect("svg filter");
+        assert_eq!(svg_label, "SVG image");
+        assert_eq!(svg_extensions, &["svg"][..]);
+
+        let (md_label, md_extensions) = filter_spec(FileFilterKind::Markdown).expect("markdown");
+        assert_eq!(md_label, "Markdown");
+        assert!(md_extensions.contains(&"md"));
+        assert!(md_extensions.contains(&"mdx"));
+        assert!(
+            !md_extensions.contains(&"txt"),
+            "txt belongs to the Text filter, not to Markdown"
+        );
+
+        for kind in [
+            FileFilterKind::Markdown,
+            FileFilterKind::Json,
+            FileFilterKind::Csv,
+            FileFilterKind::Log,
+            FileFilterKind::Xml,
+            FileFilterKind::Text,
+            FileFilterKind::Svg,
+            FileFilterKind::Html,
+        ] {
+            let (label, extensions) = filter_spec(kind).expect("filter");
+            assert!(!label.is_empty(), "{kind:?}");
+            assert!(!extensions.is_empty(), "{kind:?}");
+            assert!(
+                extensions
+                    .iter()
+                    .all(|ext| !ext.is_empty() && !ext.starts_with('.')),
+                "{kind:?}: dialog extensions must be bare, dotless names"
+            );
+        }
+
+        assert!(
+            filter_spec(FileFilterKind::Any).is_none(),
+            "the catch-all adds no filter of its own"
+        );
+    }
+
+    #[test]
+    fn filter_kinds_map_to_platform_mime_types() {
+        assert_eq!(mime_for_filter(FileFilterKind::Markdown), "text/markdown");
+        assert_eq!(mime_for_filter(FileFilterKind::Json), "application/json");
+        assert_eq!(mime_for_filter(FileFilterKind::Csv), "text/csv");
+        assert_eq!(mime_for_filter(FileFilterKind::Log), "text/plain");
+        assert_eq!(mime_for_filter(FileFilterKind::Xml), "application/xml");
+        assert_eq!(mime_for_filter(FileFilterKind::Text), "text/plain");
+        assert_eq!(mime_for_filter(FileFilterKind::Svg), "image/svg+xml");
+        assert_eq!(mime_for_filter(FileFilterKind::Html), "text/html");
+        assert_eq!(
+            mime_for_filter(FileFilterKind::Any),
+            "application/octet-stream"
+        );
+    }
+
+    #[test]
+    fn document_extensions_command_lists_every_claimed_format() {
+        let extensions = document_extensions();
+        assert_eq!(extensions.len(), paths::DOCUMENT_EXTENSIONS.len());
+        for ext in ["md", "json", "csv", "log", "xml", "txt", "yaml", "svg"] {
+            assert!(
+                extensions.iter().any(|candidate| candidate == ext),
+                "{ext} is missing from document_extensions"
+            );
+        }
+    }
+
+    #[test]
+    fn markdown_extensions_command_keeps_its_old_contract() {
+        let expected: Vec<String> = [
+            "md", "markdown", "mdown", "mkdn", "mkd", "mdx", "mdtxt", "mdtext",
+        ]
+        .iter()
+        .map(|ext| (*ext).to_string())
+        .collect();
+        assert_eq!(markdown_extensions(), expected);
+    }
+}

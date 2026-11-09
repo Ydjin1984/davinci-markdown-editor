@@ -31,6 +31,9 @@ pub struct DirEntryInfo {
     pub is_dir: bool,
     pub is_symlink: bool,
     pub is_markdown: bool,
+    /// Document kind as the frontend names it: `markdown`, `json`, `csv`,
+    /// `log`, `xml` or `text`.
+    pub kind: String,
     pub extension: Option<String>,
     pub size: u64,
     pub modified_ms: u64,
@@ -133,6 +136,7 @@ pub fn list_directory(path: &Path, options: &ListOptions) -> Result<Vec<DirEntry
             is_dir,
             is_symlink,
             is_markdown: paths::is_markdown_path(&entry_path),
+            kind: paths::document_kind(&entry_path).to_string(),
             extension,
             size: if is_dir { 0 } else { meta.len() },
             modified_ms: modified_ms(&meta),
@@ -340,6 +344,8 @@ pub struct PathInfo {
     pub is_dir: bool,
     pub is_file: bool,
     pub is_markdown: bool,
+    /// Document kind as the frontend names it; `text` when unknown.
+    pub kind: String,
     pub read_only: bool,
 }
 
@@ -351,6 +357,7 @@ pub fn path_info(path: &Path) -> PathInfo {
             is_dir: meta.is_dir(),
             is_file: meta.is_file(),
             is_markdown: paths::is_markdown_path(path),
+            kind: paths::document_kind(path).to_string(),
             read_only: meta.permissions().readonly(),
         },
         Err(_) => PathInfo {
@@ -359,6 +366,7 @@ pub fn path_info(path: &Path) -> PathInfo {
             is_dir: false,
             is_file: false,
             is_markdown: paths::is_markdown_path(path),
+            kind: paths::document_kind(path).to_string(),
             read_only: false,
         },
     }
@@ -413,5 +421,84 @@ mod tests {
         assert!(validate_component("CON.md").is_err());
         assert!(validate_component("trailing.").is_err());
         assert!(validate_component("bad:name").is_err());
+    }
+
+    fn scratch_directory(label: &str) -> PathBuf {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static COUNTER: AtomicU32 = AtomicU32::new(0);
+        let path = std::env::temp_dir().join(format!(
+            "davinci-workspace-{label}-{}-{}",
+            std::process::id(),
+            COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).expect("create scratch directory");
+        path
+    }
+
+    #[test]
+    fn listing_exposes_every_document_kind_without_hiding_files() {
+        let dir = scratch_directory("kinds");
+        let fixtures = [
+            ("a.md", "markdown"),
+            ("data.json", "json"),
+            ("table.csv", "csv"),
+            ("app.log", "log"),
+            ("doc.xml", "xml"),
+            ("notes.txt", "text"),
+            ("blob.zip", "text"),
+        ];
+        for (name, _) in fixtures {
+            fs::write(dir.join(name), b"content\n").expect("write fixture");
+        }
+
+        let entries = list_directory(
+            &dir,
+            &ListOptions {
+                include_ignored: false,
+                extra_ignored: Vec::new(),
+            },
+        )
+        .expect("list directory");
+
+        assert_eq!(
+            entries.len(),
+            fixtures.len(),
+            "the listing must not hide non-Markdown files"
+        );
+        for (name, kind) in fixtures {
+            let entry = entries
+                .iter()
+                .find(|entry| entry.name == name)
+                .unwrap_or_else(|| panic!("{name} is missing from the listing"));
+            assert_eq!(entry.kind, kind, "{name}");
+            assert_eq!(
+                entry.is_markdown,
+                kind == "markdown",
+                "{name}: isMarkdown must stay Markdown-only"
+            );
+        }
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn path_info_carries_the_document_kind() {
+        let dir = scratch_directory("path-info");
+        let file = dir.join("config.JSON");
+        fs::write(&file, b"{}\n").expect("write fixture");
+
+        let info = path_info(&file);
+        assert!(info.is_file);
+        assert!(!info.is_markdown);
+        assert_eq!(info.kind, "json");
+
+        // The kind comes from the extension even when the file is gone, so a
+        // "create this file" dialog can still pick the right editor.
+        let missing = path_info(&dir.join("missing.xml"));
+        assert!(!missing.exists);
+        assert_eq!(missing.kind, "xml");
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }

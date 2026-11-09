@@ -14,6 +14,69 @@ pub const MARKDOWN_EXTENSIONS: &[&str] = &[
     "md", "markdown", "mdown", "mkdn", "mkd", "mdx", "mdtxt", "mdtext",
 ];
 
+/// JSON documents, including the dialects that are JSON with a more specific
+/// name. JSON-with-comments is deliberately not claimed: this editor has no
+/// JSONC mode, so a `.jsonc` file opens as plain text rather than failing in
+/// the strict JSON viewer.
+pub const JSON_EXTENSIONS: &[&str] = &["json", "geojson", "webmanifest"];
+
+/// Delimited text tables.
+pub const CSV_EXTENSIONS: &[&str] = &["csv", "tsv"];
+
+/// Line-oriented logs, including newline-delimited JSON.
+pub const LOG_EXTENSIONS: &[&str] = &["log", "ndjson"];
+
+/// XML documents and the XML dialects that carry their own extension.
+pub const XML_EXTENSIONS: &[&str] = &["xml", "xsd", "xsl", "xslt", "svg", "rss", "atom", "plist"];
+
+/// Plain text and the configuration formats that are read as plain text.
+pub const TEXT_EXTENSIONS: &[&str] = &["txt", "text", "ini", "cfg", "conf", "yaml", "yml", "toml"];
+
+/// Every extension this application claims to open as a text document.
+///
+/// Kept as one explicit list rather than a concatenation so the value that
+/// crosses the IPC boundary is visible in one place; a unit test below proves
+/// it covers every group and contains no duplicates.
+pub const DOCUMENT_EXTENSIONS: &[&str] = &[
+    // Markdown
+    "md",
+    "markdown",
+    "mdown",
+    "mkdn",
+    "mkd",
+    "mdx",
+    "mdtxt",
+    "mdtext",
+    // JSON
+    "json",
+    "geojson",
+    "webmanifest",
+    // CSV
+    "csv",
+    "tsv",
+    // LOG
+    "log",
+    "ndjson",
+    // XML
+    "xml",
+    "xsd",
+    "xsl",
+    "xslt",
+    "svg",
+    "rss",
+    "atom",
+    "plist",
+    // Text
+    "txt",
+    "text",
+    "ini",
+    "cfg",
+    "conf",
+    "yaml",
+    "yml",
+    "toml",
+];
+
 /// Resolve `.` / `..` and redundant separators without touching the filesystem.
 ///
 /// `std::fs::canonicalize` is unusable for paths that do not exist yet
@@ -138,6 +201,32 @@ pub fn is_markdown_path(path: &Path) -> bool {
     }
 }
 
+/// Kind of a document, using the same names as the frontend's `DocumentKind`.
+///
+/// Returns `"markdown" | "json" | "csv" | "log" | "xml"` for the claimed
+/// groups and `"text"` for everything else — including an unknown extension or
+/// no extension at all, because the editor can still open such a file as plain
+/// text. Use [`is_document_path`] when the question is "does this application
+/// claim this format" rather than "how should it be shown".
+pub fn document_kind(path: &Path) -> &'static str {
+    match extension_lowercase(path).as_deref() {
+        Some(ext) if MARKDOWN_EXTENSIONS.contains(&ext) => "markdown",
+        Some(ext) if JSON_EXTENSIONS.contains(&ext) => "json",
+        Some(ext) if CSV_EXTENSIONS.contains(&ext) => "csv",
+        Some(ext) if LOG_EXTENSIONS.contains(&ext) => "log",
+        Some(ext) if XML_EXTENSIONS.contains(&ext) => "xml",
+        _ => "text",
+    }
+}
+
+/// True when the extension is one of the formats this application claims.
+pub fn is_document_path(path: &Path) -> bool {
+    match extension_lowercase(path) {
+        Some(ext) => DOCUMENT_EXTENSIONS.contains(&ext.as_str()),
+        None => false,
+    }
+}
+
 /// Human-readable file name, falling back to the full path for odd roots.
 pub fn file_name_or_path(path: &Path) -> String {
     path.file_name()
@@ -166,8 +255,16 @@ pub fn mime_for_path(path: &Path) -> &'static str {
         Some("ogg") => "audio/ogg",
         Some("wav") => "audio/wav",
         Some("pdf") => "application/pdf",
-        Some("md") | Some("markdown") => "text/markdown; charset=utf-8",
-        Some("txt") | Some("log") => "text/plain; charset=utf-8",
+        Some("md") | Some("markdown") | Some("mdx") => "text/markdown; charset=utf-8",
+        Some("json") | Some("geojson") | Some("webmanifest") => "application/json; charset=utf-8",
+        Some("csv") => "text/csv; charset=utf-8",
+        Some("tsv") => "text/tab-separated-values; charset=utf-8",
+        Some("xml") | Some("xsd") | Some("xsl") | Some("xslt") | Some("rss") | Some("atom") => {
+            "application/xml; charset=utf-8"
+        }
+        Some("log") | Some("ndjson") => "text/plain; charset=utf-8",
+        Some("txt") | Some("text") | Some("ini") | Some("cfg") | Some("conf") | Some("yaml")
+        | Some("yml") | Some("toml") => "text/plain; charset=utf-8",
         _ => "application/octet-stream",
     }
 }
@@ -247,6 +344,112 @@ mod tests {
         assert!(is_markdown_path(Path::new("README.MD")));
         assert!(is_markdown_path(Path::new("a.markdown")));
         assert!(!is_markdown_path(Path::new("a.txt")));
+    }
+
+    #[test]
+    fn document_kind_covers_every_group() {
+        for ext in MARKDOWN_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "markdown", "{name}");
+        }
+        for ext in JSON_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "json", "{name}");
+        }
+        for ext in CSV_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "csv", "{name}");
+        }
+        for ext in LOG_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "log", "{name}");
+        }
+        for ext in XML_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "xml", "{name}");
+        }
+        for ext in TEXT_EXTENSIONS {
+            let name = format!("note.{ext}");
+            assert_eq!(document_kind(Path::new(&name)), "text", "{name}");
+        }
+    }
+
+    #[test]
+    fn document_kind_is_case_insensitive() {
+        assert_eq!(document_kind(Path::new("README.MD")), "markdown");
+        assert_eq!(document_kind(Path::new("DATA.JSON")), "json");
+        assert_eq!(document_kind(Path::new("table.Csv")), "csv");
+        assert_eq!(document_kind(Path::new("app.LOG")), "log");
+        assert_eq!(document_kind(Path::new("doc.XML")), "xml");
+        assert_eq!(document_kind(Path::new("notes.Txt")), "text");
+    }
+
+    #[test]
+    fn unknown_or_missing_extension_falls_back_to_text() {
+        assert_eq!(document_kind(Path::new("archive.zip")), "text");
+        assert_eq!(document_kind(Path::new("Makefile")), "text");
+        assert!(!is_document_path(Path::new("archive.zip")));
+        assert!(!is_document_path(Path::new("Makefile")));
+        assert!(is_document_path(Path::new("data.json")));
+        assert!(is_document_path(Path::new("README.MD")));
+        assert!(is_document_path(Path::new("photo.SVG")));
+    }
+
+    #[test]
+    fn document_extensions_are_unique_and_complete() {
+        let mut seen = std::collections::BTreeSet::new();
+        for ext in DOCUMENT_EXTENSIONS {
+            assert!(seen.insert(*ext), "duplicate extension: {ext}");
+            assert!(
+                !ext.is_empty() && !ext.starts_with('.'),
+                "malformed extension: {ext}"
+            );
+        }
+        for group in [
+            MARKDOWN_EXTENSIONS,
+            JSON_EXTENSIONS,
+            CSV_EXTENSIONS,
+            LOG_EXTENSIONS,
+            XML_EXTENSIONS,
+            TEXT_EXTENSIONS,
+        ] {
+            for ext in group {
+                assert!(
+                    DOCUMENT_EXTENSIONS.contains(ext),
+                    "missing from DOCUMENT_EXTENSIONS: {ext}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mime_types_cover_the_new_document_formats() {
+        assert_eq!(
+            mime_for_path(Path::new("data.json")),
+            "application/json; charset=utf-8"
+        );
+        assert_eq!(
+            mime_for_path(Path::new("table.csv")),
+            "text/csv; charset=utf-8"
+        );
+        assert_eq!(
+            mime_for_path(Path::new("doc.xml")),
+            "application/xml; charset=utf-8"
+        );
+        assert_eq!(
+            mime_for_path(Path::new("app.log")),
+            "text/plain; charset=utf-8"
+        );
+        assert_eq!(
+            mime_for_path(Path::new("notes.txt")),
+            "text/plain; charset=utf-8"
+        );
+        // SVG keeps its image type so the preview can inline it as an image.
+        assert_eq!(mime_for_path(Path::new("logo.svg")), "image/svg+xml");
+        assert_eq!(
+            mime_for_path(Path::new("blob.bin")),
+            "application/octet-stream"
+        );
     }
 
     #[test]

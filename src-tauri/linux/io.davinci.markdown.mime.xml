@@ -2,9 +2,10 @@
 <!--
   Shared MIME-info registration.
 
-  `text/markdown` is already defined by the shared-mime-info database on modern
-  distributions, so this file only adds the globs that associate the Markdown
-  extensions with it. It is installed into
+  `text/markdown`, `application/json`, `text/csv`, `text/plain` and
+  `application/xml` are already defined by the shared-mime-info database on
+  modern distributions, so this file only adds the globs that associate the
+  extensions this application handles with those types. It is installed into
   /usr/share/mime/packages/ and picked up by `update-mime-database`.
 
   Packaging note: the Tauri Debian/RPM bundler writes an equivalent
@@ -24,5 +25,38 @@
     <glob pattern="*.mdx"/>
     <glob pattern="*.mdtxt"/>
     <glob pattern="*.mdtext"/>
+  </mime-type>
+
+  <mime-type type="application/json">
+    <comment>JSON document</comment>
+    <comment xml:lang="ru">Документ JSON</comment>
+    <glob pattern="*.json"/>
+    <glob pattern="*.geojson"/>
+    <glob pattern="*.webmanifest"/>
+  </mime-type>
+
+  <mime-type type="text/csv">
+    <comment>CSV table</comment>
+    <comment xml:lang="ru">Таблица CSV</comment>
+    <glob pattern="*.csv"/>
+    <glob pattern="*.tsv"/>
+  </mime-type>
+
+  <mime-type type="text/x-log">
+    <comment>Log file</comment>
+    <comment xml:lang="ru">Журнал событий</comment>
+    <glob pattern="*.log"/>
+    <glob pattern="*.ndjson"/>
+  </mime-type>
+
+  <mime-type type="application/xml">
+    <comment>XML document</comment>
+    <comment xml:lang="ru">Документ XML</comment>
+    <glob pattern="*.xml"/>
+    <glob pattern="*.xsd"/>
+    <glob pattern="*.xsl"/>
+    <glob pattern="*.xslt"/>
+    <glob pattern="*.rss"/>
+    <glob pattern="*.atom"/>
   </mime-type>
 </mime-info>
