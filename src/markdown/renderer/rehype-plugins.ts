@@ -18,6 +18,7 @@ import {
   type Highlighter,
 } from "../code/highlighter";
 import type { OutlineItem } from "@/shared/types";
+import { t } from "@/shared/i18n";
 
 /** Block-level tags that receive a `data-line` marker for scroll synchronisation. */
 const BLOCK_TAGS = new Set([
@@ -210,12 +211,14 @@ function buildDiagramElement(source: string, line: number, index: number): Eleme
     tagName: "div",
     properties: { className: ["md-diagram-tools"] },
     children: [
-      actionButton("zoom-out", "−", "Zoom out"),
-      actionButton("zoom-in", "+", "Zoom in"),
-      actionButton("fit", "Fit", "Fit to view"),
-      actionButton("reset", "1:1", "Reset zoom"),
-      actionButton("copy-svg", "Copy SVG", "Copy as SVG"),
-      actionButton("export-svg", "Export SVG", "Export as SVG"),
+      actionButton("zoom-out", "−", t("mermaid.zoomOut")),
+      actionButton("zoom-in", "+", t("mermaid.zoomIn")),
+      actionButton("fit", t("mermaid.fit"), t("mermaid.fit")),
+      actionButton("reset", "1:1", t("mermaid.reset")),
+      actionButton("fullscreen", t("mermaid.fullscreen"), t("mermaid.fullscreen")),
+      actionButton("copy-source", t("mermaid.copySource"), t("mermaid.copySource")),
+      actionButton("copy-svg", t("mermaid.copySvg"), t("mermaid.copySvg")),
+      actionButton("export-svg", t("mermaid.exportSvg"), t("mermaid.exportSvg")),
     ],
   };
 

@@ -3,7 +3,7 @@
  * filesystem watcher and the operating-system hand-off.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { MenuBar } from "@/app/MenuBar";
 import { MobileEmptyState, MobileMenu } from "@/app/MobileMenu";
@@ -19,6 +19,7 @@ import { Explorer } from "@/explorer/Explorer";
 import { PreviewPane } from "@/preview/PreviewPane";
 import { useMarkdownRender } from "@/preview/useMarkdownRender";
 import { usePreviewStore } from "@/preview/previewStore";
+import { formatModule } from "@/formats";
 import { useSettingsStore } from "@/settings/settingsStore";
 import { SettingsDialog } from "@/settings/SettingsDialog";
 import { TabBar } from "@/tabs/TabBar";
@@ -106,14 +107,33 @@ export function App() {
   const appearance = useUiStore((state) => state.appearance);
   const printing = useUiStore((state) => state.printing);
 
+  // Markdown keeps its HTML pipeline; every other kind has its own viewer and
+  // publishes a structure for the Outline panel.
+  const activeKind = activeDocument?.kind ?? "markdown";
+  const isMarkdownDocument = activeKind === "markdown";
+
   useMarkdownRender({
     documentId: activeId,
     content: activeDocument?.content ?? "",
     // Printing always renders with the light theme: a dark preview would put
     // near-white text on white paper as soon as background graphics are off.
     render: { ...renderOptions, appearance: printing ? "light" : appearance },
-    enabled: ready && activeId !== null,
+    enabled: ready && activeId !== null && isMarkdownDocument,
   });
+
+  // Structure of a structured document, in the same store the Outline reads.
+  // Parsing a multi-megabyte log on every keystroke is exactly what the
+  // performance budget forbids, so the content is deferred, the panel is
+  // checked first, and a short debounce keeps typing free.
+  const outlineContent = useDeferredValue(activeDocument?.content ?? "");
+  useEffect(() => {
+    if (!ready || isMarkdownDocument || activeId === null || !settings.view.showOutline) return;
+    const timer = setTimeout(() => {
+      const outline = formatModule(activeKind)?.outline?.(outlineContent) ?? [];
+      usePreviewStore.getState().setOutline(outline);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [ready, isMarkdownDocument, activeId, activeKind, outlineContent, settings.view.showOutline]);
 
   // --- startup hand-off ---------------------------------------------------
 

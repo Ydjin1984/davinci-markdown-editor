@@ -51,6 +51,8 @@ export default defineConfig({
             "@codemirror/search",
             "@codemirror/autocomplete",
             "@codemirror/lang-markdown",
+            "@codemirror/lang-json",
+            "@codemirror/lang-xml",
           ],
           react: ["react", "react-dom"],
         },
