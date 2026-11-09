@@ -12,13 +12,29 @@ export type LayoutMode = "editor" | "preview" | "split-h" | "split-v";
 
 export type ThemeMode = "system" | "light" | "dark";
 
-export type MermaidTheme = "auto" | "default" | "dark" | "forest" | "neutral" | "base";
+export type MermaidTheme =
+  | "auto"
+  | "davinci"
+  | "default"
+  | "dark"
+  | "forest"
+  | "neutral"
+  | "base";
 
 export type ExternalChangePolicy = "ask" | "autoReload" | "keepLocal";
 
 export type DefaultEolPolicy = "preserve" | "lf" | "crlf";
 
-export type FileFilterKind = "markdown" | "svg" | "html" | "any";
+export type FileFilterKind =
+  | "markdown"
+  | "json"
+  | "csv"
+  | "log"
+  | "xml"
+  | "text"
+  | "svg"
+  | "html"
+  | "any";
 
 export type DialogKind = "info" | "warning" | "error";
 

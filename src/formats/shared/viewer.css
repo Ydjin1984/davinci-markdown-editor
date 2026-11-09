@@ -1,0 +1,381 @@
+/**
+ * Shared viewer chrome: imported by every format module.
+ *
+ * Keeping the styles in one file is what makes four independent viewers look
+ * like one feature rather than four projects.
+ */
+
+.format-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-family: var(--font-ui);
+  color: var(--fg-default);
+}
+
+.format-viewer-hidden-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.format-viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--bg-subtle);
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.format-viewer-modes {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.format-viewer-mode {
+  background: transparent;
+  border: 0;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.format-viewer-mode + .format-viewer-mode {
+  border-left: 1px solid var(--border-default);
+}
+
+.format-viewer-mode.is-active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.format-viewer-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.format-viewer-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.format-viewer-tools button {
+  border: 1px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--fg-default);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.format-viewer-tools button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.format-viewer-tools button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.format-viewer-tools input,
+.format-viewer-tools select,
+.format-viewer-subheader input,
+.format-viewer-subheader select {
+  border: 1px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--fg-default);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.format-viewer-tools input[type="search"] {
+  min-width: 180px;
+}
+
+.format-viewer-subheader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-muted);
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg-canvas);
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.format-viewer-subheader label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.format-viewer-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+.format-viewer-body.is-stale {
+  opacity: 0.55;
+  transition: opacity 120ms ease-in;
+}
+
+.format-viewer-message {
+  margin: 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-muted);
+  background: var(--bg-subtle);
+}
+
+.format-viewer-message.is-error {
+  border-left: 3px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+}
+
+.format-viewer-message-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.format-viewer-message-body {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+}
+
+/* --- diagnostics -------------------------------------------------------- */
+
+.format-diagnostics {
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--bg-canvas);
+  max-height: 148px;
+  overflow: auto;
+  flex: none;
+}
+
+.format-diagnostic {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--fg-default);
+}
+
+.format-diagnostic:hover {
+  background: var(--bg-subtle);
+}
+
+.format-diagnostic-location {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  flex: none;
+}
+
+.format-diagnostic.is-error .format-diagnostic-location,
+.format-diagnostic.is-error .format-diagnostic-message {
+  color: var(--danger);
+}
+
+.format-diagnostic.is-warning .format-diagnostic-location,
+.format-diagnostic.is-warning .format-diagnostic-message {
+  color: var(--warning);
+}
+
+.format-diagnostics-more {
+  font-size: 11px;
+  color: var(--fg-subtle);
+  padding: 0 6px;
+}
+
+/* --- read-only source --------------------------------------------------- */
+
+.format-source {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.format-source-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.format-source-inner {
+  position: relative;
+  min-width: 100%;
+}
+
+.format-source-line {
+  display: flex;
+  align-items: flex-start;
+  white-space: pre;
+  line-height: 20px;
+}
+
+.format-source-line:hover {
+  background: var(--bg-subtle);
+}
+
+.format-source-line.is-active {
+  background: var(--accent-subtle);
+}
+
+.format-source-number {
+  flex: none;
+  width: 56px;
+  padding-right: 12px;
+  text-align: right;
+  color: var(--fg-subtle);
+  user-select: none;
+  font-size: 11px;
+}
+
+.format-source-text {
+  flex: 1;
+  padding-right: 16px;
+}
+
+.format-source-note {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  border-top: 1px solid var(--border-muted);
+  background: var(--bg-subtle);
+}
+
+/* --- shared tree -------------------------------------------------------- */
+
+.format-tree {
+  padding: 6px 0 12px;
+  font-size: 13px;
+}
+
+.format-tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.format-tree-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 1px 8px;
+  min-height: 22px;
+  cursor: default;
+}
+
+.format-tree-row:hover {
+  background: var(--bg-subtle);
+}
+
+.format-tree-toggle {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 3px;
+}
+
+.format-tree-toggle:hover {
+  background: var(--bg-inset);
+}
+
+.format-tree-key {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.format-tree-meta {
+  color: var(--fg-subtle);
+  font-size: 11px;
+}
+
+.format-tree-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.format-tree-value.is-string {
+  color: var(--success);
+}
+
+.format-tree-value.is-number {
+  color: var(--accent);
+}
+
+.format-tree-value.is-boolean {
+  color: var(--warning);
+}
+
+.format-tree-value.is-null {
+  color: var(--fg-subtle);
+  font-style: italic;
+}
+
+.format-token-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--fg-muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.format-token-button:hover {
+  color: var(--accent);
+  background: var(--accent-subtle);
+}

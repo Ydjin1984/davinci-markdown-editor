@@ -32,7 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
     theme: "system",
     fontSize: 16,
     syncScroll: true,
-    mermaidTheme: "auto",
+    mermaidTheme: "davinci",
     codeTheme: "auto",
     allowRawHtml: true,
     renderMath: true,

@@ -176,6 +176,7 @@ export function SettingsDialog() {
                 value={settings.preview.mermaidTheme}
                 onChange={(event) => patch("preview", { mermaidTheme: event.target.value as never })}
               >
+                <option value="davinci">{t("settings.mermaidDavinci")}</option>
                 <option value="auto">Auto</option>
                 <option value="default">Default</option>
                 <option value="dark">Dark</option>
