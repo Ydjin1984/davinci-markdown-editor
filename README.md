@@ -15,12 +15,12 @@ native file associations on Windows, Linux and macOS
 [![Rust](https://img.shields.io/badge/Rust-1.82+-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-361%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-366%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
-**0.4.0** routes Mermaid flowcharts and state diagrams orthogonally: dedicated ports, separate lanes
-for counter-edges, labels beside their own line and a rectangular self-loop —
-[release notes](docs/releases/v0.4.0.md).
+**0.4.1** fixes clustered flowcharts (Mermaid `subgraph`): they are rendered exactly as Mermaid draws
+them, while flat flowcharts and state diagrams keep the orthogonal routing from 0.4.0 —
+[release notes](docs/releases/v0.4.1.md).
 
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
@@ -470,7 +470,7 @@ npm run test:rust    # cargo test
 ## Testing
 
 ```bash
-npm run test        # 361 frontend tests
+npm run test        # 366 frontend tests
 npm run test:rust   # 85 Rust tests
 ```
 
@@ -597,5 +597,6 @@ scannable QR code, are in the application under _Help → About_.
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
+
 
 
