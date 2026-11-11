@@ -54,7 +54,7 @@ export interface DiagramPalette {
  * initialisation key and the SVG cache key, so an upgrade can never serve a
  * stale colour.
  */
-export const PALETTE_VERSION = "davinci-1";
+export const PALETTE_VERSION = "davinci-2";
 
 export const PALETTES: Record<Appearance, DiagramPalette> = {
   dark: {
@@ -113,7 +113,13 @@ export const PALETTES: Record<Appearance, DiagramPalette> = {
   },
 };
 
-const FONT_FAMILY = 'Segoe UI, Noto Sans, "Segoe UI Emoji", Helvetica, Arial, sans-serif';
+/**
+ * One font family for measuring and drawing. Mermaid measures label widths
+ * with the `fontFamily` config value and paints them with the theme variable,
+ * so both have to be the same string.
+ */
+export const DIAGRAM_FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 
 /** Resolve a CSS colour token (`#rgb`, `#rrggbb`, `rgb()`) to linear RGB. */
 function parseColour(input: string): [number, number, number] {
@@ -200,7 +206,7 @@ export function davinciTheme(appearance: Appearance): DavinciTheme {
   const themeVariables: Record<string, string | boolean> = {
     darkMode: dark,
     background: palette.background,
-    fontFamily: FONT_FAMILY,
+    fontFamily: DIAGRAM_FONT_FAMILY,
     fontSize: "16px",
 
     // Nodes and clusters -----------------------------------------------------
@@ -321,12 +327,22 @@ export function davinciTheme(appearance: Appearance): DavinciTheme {
 
   // Deliberately narrow: it repairs label backgrounds Mermaid leaves
   // transparent and never touches `.node rect { fill }`, which is what the ТЗ
-  // forbids and what would erase a document's own `classDef`/`style`.
+  // forbids and what would erase a document's own `classDef`/`style`. The
+  // geometry rules below only shape what Mermaid draws itself: a rectangle's
+  // corner radius, the weight of the first text row in a node (its title), and
+  // the stroke of an edge path. Author `style`/`linkStyle` win because they are
+  // inline and this is a stylesheet.
   const themeCSS = [
     `.edgeLabel rect, .edgeLabel .labelBkg { fill: ${palette.edgeLabelBackground}; stroke: none; }`,
     `.edgeLabel text, .edgeLabel tspan { fill: ${palette.text}; }`,
     `.cluster-label text, .cluster-label span { fill: ${palette.text}; }`,
     `.sectionTitle text, .titleText { fill: ${palette.text}; }`,
+    // Rounded rectangles only: diamonds are polygons, cylinders are paths.
+    `.node rect.label-container { rx: 4px; ry: 4px; }`,
+    // The first text row of a node is its title; edge labels stay regular.
+    `.node text > tspan.row:first-of-type .text-inner-tspan { font-weight: 600; }`,
+    `.edgePaths path, .edgePath path { stroke-width: 1.6px; }`,
+    `.edgeLabel text, .edgeLabel .text-inner-tspan { font-weight: 400; }`,
   ].join("\n");
 
   return { themeVariables, themeCSS };

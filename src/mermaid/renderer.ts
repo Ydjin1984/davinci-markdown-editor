@@ -21,7 +21,8 @@ import type { MermaidConfig } from "mermaid";
 
 import type { MermaidTheme } from "@/shared/types";
 import { DiagramTaskAbortedError, diagramQueue, isDiagramAbort } from "./queue";
-import { PALETTE_VERSION, davinciTheme, type Appearance } from "./theme";
+import { improveOrthogonalRoutes } from "./route/svg";
+import { DIAGRAM_FONT_FAMILY, PALETTE_VERSION, davinciTheme, type Appearance } from "./theme";
 
 type MermaidApi = typeof import("mermaid").default;
 
@@ -31,23 +32,30 @@ export interface DiagramRenderOptions {
 }
 
 /** Bumped when rendering logic changes in a way that changes the SVG. */
-export const RENDER_VERSION = "render-2";
+export const RENDER_VERSION = "render-4";
 
 /**
  * Layout options that change the SVG. They are part of the cache key, so adding
  * one here can never reuse an SVG produced with different geometry.
  */
-const LAYOUT_VERSION = "layout-1";
+const LAYOUT_VERSION = "layout-2";
 const LAYOUT_OPTIONS = {
   htmlLabels: false,
   useMaxWidth: false,
+  // Flowchart geometry. `curve: "step"` makes Mermaid draw right-angled
+  // polylines instead of its default `basis` curves, and the spacings leave
+  // room for edge labels. The ports and corridors themselves are rebuilt by
+  // `route/` after the render (see `improveOrthogonalRoutes`): dagre's
+  // centre-to-centre routes run under labels and share segments.
+  flowchart: {
+    curve: "step",
+    nodeSpacing: 56,
+    rankSpacing: 76,
+    padding: 16,
+  },
 } as const;
-
 const CACHE_LIMIT = 80;
 const RENDER_TIMEOUT_MS = 15_000;
-
-const FONT_FAMILY =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 
 const cache = new Map<string, string>();
 
@@ -126,8 +134,12 @@ export function mermaidConfig(options: DiagramRenderOptions): MermaidConfig {
     // Labels as SVG <text> rather than <foreignObject>, so an exported SVG
     // opens correctly in viewers that do not embed HTML.
     htmlLabels: LAYOUT_OPTIONS.htmlLabels,
-    fontFamily: FONT_FAMILY,
-    flowchart: { htmlLabels: false, useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
+    fontFamily: DIAGRAM_FONT_FAMILY,
+    flowchart: {
+      htmlLabels: LAYOUT_OPTIONS.htmlLabels,
+      useMaxWidth: LAYOUT_OPTIONS.useMaxWidth,
+      ...LAYOUT_OPTIONS.flowchart,
+    },
     sequence: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
     gantt: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
     er: { useMaxWidth: LAYOUT_OPTIONS.useMaxWidth },
@@ -252,11 +264,13 @@ export async function renderDiagram(
 
   try {
     const svg = stripUnsafeMarkup(
-      await diagramQueue.enqueue(async () => {
-        const mermaid = await loadMermaid();
-        ensureInitialised(mermaid, options);
-        return renderWithTimeout(mermaid, nextRenderId(), source);
-      }, signal),
+      improveOrthogonalRoutes(
+        await diagramQueue.enqueue(async () => {
+          const mermaid = await loadMermaid();
+          ensureInitialised(mermaid, options);
+          return renderWithTimeout(mermaid, nextRenderId(), source);
+        }, signal),
+      ),
     );
 
     if (signal?.aborted) throw new DiagramTaskAbortedError();

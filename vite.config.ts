@@ -23,8 +23,10 @@ export default defineConfig({
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
     watch: {
-      // src-tauri is watched by cargo, not by Vite.
-      ignored: ["**/src-tauri/**"],
+      // src-tauri is watched by cargo, not by Vite. Atomic editors write a
+      // `.<name>.<pid>.<uuid>.tmpdir` directory next to the file they replace;
+      // chokidar otherwise races with its removal and kills the dev server.
+      ignored: ["**/src-tauri/**", "**/*.tmpdir/**"],
     },
   },
 

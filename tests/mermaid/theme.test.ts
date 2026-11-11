@@ -119,7 +119,10 @@ describe("davinciTheme", () => {
   it("does not override author fills with !important", () => {
     const { themeCSS } = davinciTheme("light");
     expect(themeCSS).not.toContain("!important");
-    expect(themeCSS).not.toMatch(/\.node\s+rect/);
+    // Geometry (rx/ry) is allowed; colour rules on node rectangles are not —
+    // they would erase a document's own classDef/style.
+    expect(themeCSS).not.toMatch(/\.node\s+rect[^{]*\{[^}]*\b(fill|stroke)\s*:/);
+    expect(themeCSS).toContain("rect.label-container");
     expect(themeCSS).toContain("edgeLabel");
   });
 });

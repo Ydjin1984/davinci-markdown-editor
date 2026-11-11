@@ -40,6 +40,13 @@ describe("mermaidConfig", () => {
     expect(config.pie?.useMaxWidth).toBe(false);
   });
 
+  it("routes flowcharts with the orthogonal layout contract", () => {
+    const config = mermaidConfig({ appearance: "dark", theme: "auto" });
+    expect(config.flowchart?.curve).toBe("step");
+    expect(config.flowchart?.nodeSpacing).toBe(56);
+    expect(config.flowchart?.rankSpacing).toBe(76);
+  });
+
   it("passes an explicit theme through without the DaVinci variables", () => {
     const config = mermaidConfig({ appearance: "dark", theme: "forest" });
 

@@ -27,6 +27,7 @@ import { DIAGRAM_TEMPLATES, fencedDiagram } from "@/mermaid/templates";
 import type { Appearance } from "@/mermaid/theme";
 import diagramsFixture from "./fixtures/diagrams.md?raw";
 import invalidFixture from "./fixtures/invalid-diagram.md?raw";
+import renderTzFixture from "./fixtures/render-tz.md?raw";
 
 type ZoomAction = "fit" | "100" | "200";
 
@@ -116,6 +117,7 @@ function buildDocument(): string {
 
   parts.push("## Комплект: diagrams.md", "", diagramsFixture.trimEnd(), "");
   parts.push("## Комплект: invalid-diagram.md", "", invalidFixture.trimEnd(), "");
+  parts.push("## ТЗ: render-tz.md", "", renderTzFixture.trimEnd(), "");
 
   return parts.join("\n");
 }
