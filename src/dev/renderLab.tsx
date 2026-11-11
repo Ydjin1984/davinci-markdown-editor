@@ -23,11 +23,13 @@ import "../styles/markdown.css";
 
 import { renderMarkdown } from "@/markdown/renderer/pipeline";
 import { applyZoom, fitDiagram, hydrateDiagrams, standaloneSvg } from "@/mermaid/hydrate";
+import { improveOrthogonalRoutes } from "@/mermaid/route/svg";
 import { DIAGRAM_TEMPLATES, fencedDiagram } from "@/mermaid/templates";
 import type { Appearance } from "@/mermaid/theme";
 import diagramsFixture from "./fixtures/diagrams.md?raw";
 import invalidFixture from "./fixtures/invalid-diagram.md?raw";
 import renderTzFixture from "./fixtures/render-tz.md?raw";
+import subgraphFixture from "./fixtures/subgraph.md?raw";
 
 type ZoomAction = "fit" | "100" | "200";
 
@@ -94,6 +96,7 @@ interface RenderLabApi {
   setZoom: (action: ZoomAction) => SizeSample[];
   report: () => LabReport | null;
   standalone: (labCase: string) => string | null;
+  routeSvgText: (svg: string) => string;
   refresh: () => LabReport | null;
   templates: Array<{ id: string; labelKey: string; label: string; hint: string }>;
 }
@@ -118,6 +121,7 @@ function buildDocument(): string {
   parts.push("## Комплект: diagrams.md", "", diagramsFixture.trimEnd(), "");
   parts.push("## Комплект: invalid-diagram.md", "", invalidFixture.trimEnd(), "");
   parts.push("## ТЗ: render-tz.md", "", renderTzFixture.trimEnd(), "");
+  parts.push("## Кластеры: subgraph.md", "", subgraphFixture.trimEnd(), "");
 
   return parts.join("\n");
 }
@@ -447,6 +451,7 @@ function Lab() {
         const container = containerRef.current;
         return container ? collectReport(container, appearanceRef.current) : null;
       },
+      routeSvgText: (svg) => improveOrthogonalRoutes(svg),
       standalone: (labCase) => {
         const container = containerRef.current;
         const block = container ? blocksByCase(container).get(labCase) : undefined;

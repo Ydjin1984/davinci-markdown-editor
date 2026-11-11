@@ -415,6 +415,10 @@ function routeSvg(svg: SVGSVGElement): boolean {
   const type = svg.getAttribute("aria-roledescription") ?? "";
   if (!/flowchart|stateDiagram/.test(type)) return false;
 
+  // Clustered layouts can use separate coordinate systems for their paths
+  // and nodes. Keep Mermaid's routes, labels and viewport together.
+  if (isClusteredFlowchart(svg)) return false;
+
   const nodes = collectNodes(svg);
   if (nodes.size < 2) return false;
 
@@ -452,7 +456,20 @@ function routeSvg(svg: SVGSVGElement): boolean {
 }
 
 /**
- * Rewrite Mermaid's SVG with orthogonal routes.
+ * True for a flowchart that Mermaid drew with clusters (subgraphs).
+ *
+ * Clustered layouts are left exactly as Mermaid rendered them: the router
+ * reads node boxes in SVG user coordinates while a path's `d` lives in the
+ * coordinates of its own group, so re-routing a clustered graph moved arrows
+ * away from their shapes. Flat flowcharts and state diagrams are unaffected.
+ */
+export function isClusteredFlowchart(svg: SVGSVGElement): boolean {
+  const type = svg.getAttribute("aria-roledescription") ?? "";
+  if (!/flowchart/.test(type)) return false;
+  return Boolean(svg.querySelector("g.cluster, g.clusters > g, g.subgraph, g.subgraphs > g"));
+}
+
+/** Rewrite Mermaid's SVG with orthogonal routes.
  *
  * Returns the input unchanged when the diagram type is unsupported, when the
  * geometry cannot be read reliably, or when DOM measurement is unavailable.

@@ -32,13 +32,13 @@ export interface DiagramRenderOptions {
 }
 
 /** Bumped when rendering logic changes in a way that changes the SVG. */
-export const RENDER_VERSION = "render-4";
+export const RENDER_VERSION = "render-5";
 
 /**
  * Layout options that change the SVG. They are part of the cache key, so adding
  * one here can never reuse an SVG produced with different geometry.
  */
-const LAYOUT_VERSION = "layout-2";
+const LAYOUT_VERSION = "layout-3";
 const LAYOUT_OPTIONS = {
   htmlLabels: false,
   useMaxWidth: false,
