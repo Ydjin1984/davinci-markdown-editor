@@ -15,12 +15,12 @@ native file associations on Windows, Linux and macOS
 [![Rust](https://img.shields.io/badge/Rust-1.82+-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-350%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
+[![Tests](https://img.shields.io/badge/tests-361%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
-**0.3.0** adds structured viewers for JSON, CSV, LOG and XML, the DaVinci diagram palette with
-fit/fullscreen/export controls, and a per-format icon and file association on every platform —
-[release notes](docs/releases/v0.3.0.md).
+**0.4.0** routes Mermaid flowcharts and state diagrams orthogonally: dedicated ports, separate lanes
+for counter-edges, labels beside their own line and a rectangular self-loop —
+[release notes](docs/releases/v0.4.0.md).
 
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
@@ -470,7 +470,7 @@ npm run test:rust    # cargo test
 ## Testing
 
 ```bash
-npm run test        # 350 frontend tests
+npm run test        # 361 frontend tests
 npm run test:rust   # 85 Rust tests
 ```
 
@@ -481,8 +481,8 @@ sanitisation policy — the latter with explicit XSS vectors (`<script>`, `onerr
 content sniffer have their own tests, and each structured format has a parser suite built on the
 files in `DaVinci_Render_Kit/examples`: exact JSON numbers and duplicate keys, CSV quoting,
 multi-line cells and ragged rows, LOG event grouping with stack traces, XML mixed content and
-namespaces. The Mermaid suite checks palette contrast, template class definitions, id prefixing and
-the cache key. The menu bar has its own regression test for a submenu that used to vanish as the
+namespaces. The Mermaid suite checks palette contrast, template class definitions, id prefixing, the cache key and
+the orthogonal routing rules (ports, counter-edges, loops, notes, fallback). The menu bar has its own regression test for a submenu that used to vanish as the
 pointer entered it.
 
 **Rust unit tests** cover path normalisation and containment, CLI parsing, encoding and EOL helpers,
@@ -597,3 +597,5 @@ scannable QR code, are in the application under _Help → About_.
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
+
+
