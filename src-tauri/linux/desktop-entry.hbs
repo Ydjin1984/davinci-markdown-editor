@@ -9,7 +9,9 @@ TryExec={{exec}}
 Icon={{icon}}
 Terminal=false
 Categories={{categories}}
-MimeType=text/markdown;
-Keywords=markdown;md;markdown-editor;text;editor;preview;mermaid;gfm;
+{{#if mime_type}}
+MimeType={{mime_type}};
+{{/if}}
+Keywords=markdown;md;json;csv;log;xml;markdown-editor;text;editor;preview;mermaid;gfm;
 StartupNotify=true
 StartupWMClass={{exec}}

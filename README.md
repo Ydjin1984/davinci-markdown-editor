@@ -18,9 +18,10 @@ native file associations on Windows, Linux and macOS
 [![Tests](https://img.shields.io/badge/tests-366%20frontend%20%C2%B7%2085%20Rust-success)](#testing)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-informational)](#install)
 
-**0.4.1** fixes clustered flowcharts (Mermaid `subgraph`): they are rendered exactly as Mermaid draws
-them, while flat flowcharts and state diagrams keep the orthogonal routing from 0.4.0 —
-[release notes](docs/releases/v0.4.1.md).
+**0.4.2** makes the Linux packages start and paint on Ubuntu 22.04 and newer: they are built against
+glibc 2.35 instead of 2.39, and WebKitGTK is put on its reliable rendering path so the window no
+longer stays blank on NVIDIA, in virtual machines and in remote sessions —
+[release notes](docs/releases/v0.4.2.md).
 
 <img src="docs/screenshots/dark.png" alt="Explorer on the left, Markdown source in the middle, rendered document on the right" width="100%" />
 
@@ -87,15 +88,26 @@ _More info → Run anyway_ continues.
 | **Any**                    | `chmod +x DaVinci.Markdown.Editor_<version>_amd64.AppImage` then run it |
 
 The `.deb` and `.rpm` declare their WebKitGTK and GTK dependencies, install a desktop entry and
-register `text/markdown`, so the application appears in _Open With_ and can be set as the default
-handler. The AppImage carries its own WebKit stack, which is why it is much larger — prefer a
-package for your distribution when one is available.
+register all five format families — Markdown (`text/markdown`), JSON (`application/json`), CSV
+(`text/csv`), LOG (`text/x-log`) and XML (`application/xml`) — so the application appears in
+_Open With_ and can be set as the default handler. The AppImage carries its own WebKit stack, which
+is why it is much larger — prefer a package for your distribution when one is available.
+
+The packages are built against glibc 2.35, so Ubuntu 22.04 (Jammy), Debian 12 (Bookworm) and newer
+are the supported baseline. WebKitGTK's DMA-BUF renderer is disabled by default, because it leaves a
+blank white window on the NVIDIA proprietary driver and in some virtual and remote sessions; the
+editor uses the shared-memory path instead. Export
+`WEBKIT_DISABLE_DMABUF_RENDERER=0` before launching to keep the accelerated path on a driver that
+handles it.
 
 To make it the default for Markdown files:
 
 ```bash
 xdg-mime default "DaVinci Markdown Editor.desktop" text/markdown
 ```
+
+The same command takes `application/json`, `text/csv`, `text/x-log` or `application/xml` to make the
+editor the default for the other four formats.
 
 > The desktop file keeps the name the bundler derives from the product name, which contains spaces
 > — hence the quotes. The graphical route (_Properties → Open With → Set as default_) does not need
@@ -104,9 +116,9 @@ xdg-mime default "DaVinci Markdown Editor.desktop" text/markdown
 > To remove the package later, use the name from the control file rather than the file name of the
 > download: `sudo apt remove da-vinci-markdown-editor` (Debian family) or
 > `sudo dnf remove da-vinci-markdown-editor` (Fedora family). The `.desktop` entry ships with
-> `Exec=davinci-markdown %F`, so double-clicking a Markdown file opens it in the running window, and
-> with `MimeType=text/markdown` the entry appears in _Open With_ as soon as the package is
-> installed — no session restart needed.
+> `Exec=davinci-markdown %F`, so double-clicking a document opens it in the running window, and its
+> `MimeType` line lists all five format families — the entry appears in _Open With_ as soon as the
+> package is installed, with no session restart needed.
 >
 > The AppImage cannot register file associations, because it installs nothing. It is the right
 > choice for trying the editor; use a package if you want `.md` to open in it.

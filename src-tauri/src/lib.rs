@@ -107,6 +107,40 @@ fn attach_parent_console() {
 #[cfg(not(windows))]
 fn attach_parent_console() {}
 
+/// Put WebKitGTK on the rendering path that works everywhere.
+///
+/// Since 2.42 WebKitGTK hands frames to the compositor through DMA-BUF, and the
+/// buffers come from GBM. On the NVIDIA proprietary driver — and in some
+/// virtualised, remote-desktop and multi-GPU setups — GBM refuses to allocate
+/// them:
+///
+/// ```text
+/// KMS: DRM_IOCTL_MODE_CREATE_DUMB failed: Permission denied
+/// Failed to create GBM buffer of size 1360x880: Permission denied
+/// ```
+///
+/// The process stays healthy and the window is created, but nothing is ever
+/// painted into it: the user sees a blank white rectangle, which looks exactly
+/// like an application that installed but does not work. This is WebKit bug
+/// 261874, and it still reproduces on WebKitGTK 2.50 with current NVIDIA
+/// drivers.
+///
+/// The shared-memory transport behind `WEBKIT_DISABLE_DMABUF_RENDERER=1` is
+/// slower per frame but always paints, and an editor of text and vector
+/// diagrams has no need for the difference. WebKit reads the variable once,
+/// before the webview exists, so it has to be set here — and only when the
+/// user has not chosen a value themselves. `0` is the documented way to keep
+/// DMA-BUF on for a driver that handles it.
+#[cfg(target_os = "linux")]
+fn prepare_linux_webkit() {
+    if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn prepare_linux_webkit() {}
+
 /// Start the application.
 ///
 /// On Android and iOS the same function is the library entry point the
@@ -115,6 +149,10 @@ fn attach_parent_console() {}
 /// the desktop, where `main` calls this directly.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Must happen before the builder: WebKit reads the variable when the
+    // webview is created, and a late assignment would have no effect.
+    prepare_linux_webkit();
+
     let raw_args: Vec<String> = std::env::args().skip(1).collect();
     let args = cli::parse(&raw_args);
 

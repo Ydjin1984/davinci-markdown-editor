@@ -2,16 +2,15 @@
 <!--
   Shared MIME-info registration.
 
-  `text/markdown`, `application/json`, `text/csv`, `text/plain` and
+  `text/markdown`, `application/json`, `text/csv`, `text/x-log` and
   `application/xml` are already defined by the shared-mime-info database on
   modern distributions, so this file only adds the globs that associate the
   extensions this application handles with those types. It is installed into
   /usr/share/mime/packages/ and picked up by `update-mime-database`.
 
-  Packaging note: the Tauri Debian/RPM bundler writes an equivalent
-  registration from `bundle.fileAssociations` in tauri.conf.json. This file is
-  the explicit, reviewable copy used when packing by hand or when a distribution
-  needs the association to be declared as a package file.
+  Packaging note: the Tauri Debian/RPM bundler only feeds the MIME list into
+  the desktop entry's `MimeType` line; this file is the registration used by
+  the MIME database itself, and the two have to be kept in step by hand.
 -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="text/markdown">

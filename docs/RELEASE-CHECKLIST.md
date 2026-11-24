@@ -76,23 +76,32 @@ Use a VM or a machine that has never had the application installed.
 
 ## 3. Linux — clean install (spec §32)
 
-Test at minimum on Ubuntu/Debian (GNOME) and one of Kali, Fedora or Arch.
+Test at minimum on Ubuntu 22.04 (GNOME) and one of Kali, Fedora or Arch. Run one pass on an NVIDIA
+machine with the proprietary driver and one in a virtual machine or remote session: that is where
+WebKitGTK's DMA-BUF renderer used to leave a blank window.
 
 **Install**
 
-- [ ] `sudo dpkg -i davinci-markdown_*.deb` (or `apt install ./…`) completes
+- [ ] `sudo apt install ./DaVinci.Markdown.Editor_*.deb` (or `sudo dpkg -i …`) completes
 - [ ] Dependencies resolve or are reported clearly
 - [ ] The application appears in the desktop application menu
 - [ ] The application icon renders at menu, window and taskbar sizes
-- [ ] `davinci-markdown --version` works from a terminal
+- [ ] `davinci-markdown --version` works from a terminal, with no `GLIBC` loader warning
+- [ ] `readelf --version-info /usr/bin/davinci-markdown` reports no symbol newer than
+      `GLIBC_2.35` — the package is built for Ubuntu 22.04 and newer, not for the build host
+- [ ] The window paints its editor, tabs and preview (not a white rectangle) on NVIDIA, in a VM and
+      over X11
 
 **Desktop integration**
 
-- [ ] `/usr/share/applications/io.davinci.markdown.desktop` exists
-- [ ] `/usr/share/mime/packages/io.davinci.markdown.mime.xml` exists
+- [ ] `/usr/share/applications/DaVinci Markdown Editor.desktop` exists — the name comes from the
+      product name and contains spaces
+- [ ] `/usr/share/mime/packages/io.davinci.markdown.xml` exists
+- [ ] `MimeType` in the desktop entry lists `text/markdown`, `application/json`, `text/csv`,
+      `text/x-log` and `application/xml`
 - [ ] `xdg-mime query default text/markdown` returns the desktop file after assignment
 - [ ] `gio info file.md` reports `text/markdown`
-- [ ] The `.md` entry appears in _Open With_ in the file manager
+- [ ] The `.md`, `.json`, `.csv`, `.log` and `.xml` entries all appear in _Open With_
 - [ ] _Properties → Open With → Set as default_ works
 
 **File managers**
